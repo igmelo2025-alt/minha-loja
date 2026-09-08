@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <meta name="description" content="Minha Loja — vendas, estoque, gastos e dashboard">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles-v12-7.css">
+  <title>Minha Loja</title>
+
+<style id="cacau-theme">
+:root{--bg:#f7f0e8;--surface:#fffdf9;--ink:#4a2418;--muted:#7d6a60;--line:#e7d8ca;--soft:#f0e3d7;--accent:#6b3a25;--accent-dark:#3f1d14;--gold:#c8a45d}
+html,body{background:#f7f0e8!important;color:#4a2418!important}
+.topbar{background:linear-gradient(135deg,#3f1d14,#6b3a25)!important;color:#fff!important}
+.subtitle{color:#eaded2!important}.brand-dot{color:#c8a45d!important}
+.app{background:#f7f0e8!important}
+.quick,.card,.panel,.item{background:#fffdf9!important;border-color:#e7d8ca!important}
+.quick b,.kpi-icon{background:#f0e3d7!important;color:#6b3a25!important}
+.primary{background:#6b3a25!important;color:#fff!important}
+.secondary{background:#fffdf9!important;color:#4a2418!important;border-color:#e7d8ca!important}
+.bottom-nav{background:#fffdf9f2!important;border-top-color:#e7d8ca!important}
+.nav-item{color:#8a766b!important}.nav-item.active{color:#6b3a25!important}.nav-item.active:before{background:#c8a45d!important}
+.eyebrow{color:#9b7b62!important}
+.card:after{background:#c8a45d12!important}
+.positive{color:#356b4b!important}.negative,.stock-low{color:#a33b2f!important}
+.bar>i{background:linear-gradient(90deg,#6b3a25,#c8a45d)!important}
+.modal-box{background:#fffdf9!important;border-color:#e7d8ca!important}
+</style>
+<script id="v12-unregister-sw">
+if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+  if ("serviceWorker" in navigator) navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
+  if (window.caches) caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+}
+</script>
+<style id="v12-style">
+.v12-badge{display:inline-block;margin-left:5px;padding:2px 6px;border-radius:9px;background:rgba(255,255,255,.2);color:#fff;font-size:10px;font-weight:700}
+.v12-closing{margin:10px 0 14px;padding:14px 16px;border:1px solid rgba(111,57,32,.15);border-radius:16px;background:#fffaf3;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 4px 14px rgba(64,36,20,.06)}
+.v12-closing strong{display:block;font-size:14px}.v12-closing small{display:block;margin-top:4px;font-size:11px;opacity:.7}.v12-closing button{border:0;border-radius:10px;padding:9px 14px;background:#6f3920;color:#fff;font-weight:700}
+</style>
+
+<style id="v12-login">
+.login-screen{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,#3f1d14,#6b3a25);font-family:inherit}
+.login-screen.hidden{display:none}
+.login-card{width:min(100%,390px);background:#fffdf9;border:1px solid #e7d8ca;border-radius:24px;padding:30px 24px;box-shadow:0 20px 60px rgba(40,18,10,.28);color:#4a2418}
+.login-logo{font-size:25px;font-weight:900;text-align:center;color:#4a2418}.login-logo span{color:#c8a45d}.login-eyebrow{text-align:center;margin-top:24px;font-size:11px;letter-spacing:.14em;font-weight:800;color:#9b7b62}.login-card h1{text-align:center;margin:6px 0 4px;font-size:28px}.login-card>p{text-align:center;margin:0 0 22px;color:#7d6a60;font-size:13px}.login-field{display:block;font-size:12px;font-weight:800;margin:12px 0;color:#6b3a25}.login-field input{display:block;width:100%;box-sizing:border-box;margin-top:7px;padding:13px 14px;border:1px solid #e7d8ca;border-radius:12px;background:#fff;color:#4a2418;font-size:15px;outline:none}.login-field input:focus{border-color:#c8a45d;box-shadow:0 0 0 3px rgba(200,164,93,.16)}.login-check{display:flex;align-items:center;gap:8px;margin:14px 0;color:#7d6a60;font-size:12px}.login-button{width:100%;border:0;border-radius:12px;padding:14px;background:#6b3a25;color:#fff;font-size:15px;font-weight:800;cursor:pointer}.login-button:active{transform:translateY(1px)}.login-error{min-height:18px;text-align:center;margin-top:10px;color:#a33b2f;font-size:12px;font-weight:700}.login-hint{display:block;text-align:center;margin-top:14px;color:#9b7b62;font-size:11px}.login-hint b{color:#6b3a25}
+body.login-locked{overflow:hidden}
+</style>
+<script id="v12-login-guard">
+(function(){
+  const KEY='minha_loja_login_v1';
+  function initLogin(){
+    const screen=document.getElementById('loginScreen');
+    const form=document.getElementById('loginForm');
+    const error=document.getElementById('loginError');
+    if(!screen || !form || !error) return;
+    let saved=false;
+    try { saved=localStorage.getItem(KEY)==='1'; } catch(e) {}
+    if(saved){ screen.classList.add('hidden'); document.body.classList.remove('login-locked'); }
+    else { screen.classList.remove('hidden'); document.body.classList.add('login-locked'); }
+    form.addEventListener('submit',function(e){
+      e.preventDefault();
+      const u=document.getElementById('loginUser').value.trim();
+      const p=document.getElementById('loginPass').value;
+      if(u==='admin' && p==='1234'){
+        try {
+          if(document.getElementById('rememberLogin').checked) localStorage.setItem(KEY,'1');
+          else localStorage.removeItem(KEY);
+        } catch(e) {}
+        error.textContent=''; screen.classList.add('hidden'); document.body.classList.remove('login-locked');
+      } else {
+        error.textContent='Usuário ou senha incorretos.';
+        document.getElementById('loginPass').value='';
+        document.getElementById('loginPass').focus();
+      }
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',initLogin);
+  else initLogin();
+})();
+</script>
+
+<style id="v12-6-backup">
+.backup-status{margin-top:14px;padding:12px 14px;border:1px solid #e7d8ca;border-radius:12px;background:#f7f0e8;color:#6b3a25;font-size:12px}
+</style>
+
+<style id="v12-7-auto-backup">
+.auto-backup-box{margin-top:14px;padding:16px;border:1px solid #e7d8ca;border-radius:14px;background:#fffaf4}.auto-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0}.auto-row label{font-weight:800;color:#6b3a25;font-size:13px}.auto-row select,.auto-row input[type=text]{padding:10px;border:1px solid #e7d8ca;border-radius:10px;background:#fff;color:#4a2418}.auto-check{display:flex;align-items:center;gap:9px;font-size:13px;color:#6b3a25}.cloud-fields{display:grid;gap:9px;margin-top:12px}.cloud-fields input{width:100%;box-sizing:border-box;padding:11px;border:1px solid #e7d8ca;border-radius:10px}.auto-status{margin-top:12px;padding:10px;border-radius:10px;background:#f7f0e8;color:#6b3a25;font-size:12px}.small-note{font-size:11px;color:#8c776a;line-height:1.45}
+</style>
+</head>
+<body>
+  <section id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <div class="login-logo">Minha Loja <span>●</span></div>
+      <div class="login-eyebrow">ACESSO RESTRITO</div>
+      <h1>Entrar</h1>
+      <p>Digite seus dados para acessar sua loja.</p>
+      <form id="loginForm" autocomplete="on">
+        <label class="login-field">Usuário<input id="loginUser" name="username" type="text" autocomplete="username" placeholder="Usuário" required></label>
+        <label class="login-field">Senha<input id="loginPass" name="password" type="password" autocomplete="current-password" placeholder="Senha" required></label>
+        <label class="login-check"><input id="rememberLogin" type="checkbox"> Manter conectado neste aparelho</label>
+        <button class="login-button" type="submit">Entrar</button>
+        <div id="loginError" class="login-error" role="alert"></div>
+      </form>
+      <small class="login-hint">Acesso inicial: <b>admin</b> / <b>1234</b></small>
+    </div>
+  </section>
+
+  <header class="topbar">
+    <div>
+      <div class="brand">Minha Loja <span class="brand-dot">●</span></div>
+      <div class="subtitle">Visão geral do seu negócio</div>
+    </div>
+    <button id="backupBtn" class="icon-btn" title="Backup">↥</button>
+  </header>
+
+  <main class="app">
+    <section id="dashboard" class="screen active">
+      <div class="section-head dashboard-head">
+        <div>
+          <div class="eyebrow">VISÃO GERAL</div>
+          <h1>Dashboard</h1>
+          <p id="periodLabel">Ano atual</p>
+        </div>
+        <select id="yearFilter" class="select small"></select>
+      </div>
+
+      <div class="today-strip" id="todayStrip"></div>
+      <div class="quick-actions">
+        <button class="quick" onclick="openSaleForm()"><b>+</b><span>Nova venda</span></button>
+        <button class="quick" onclick="openProductForm()"><b>□</b><span>Novo produto</span></button>
+        <button class="quick" onclick="openExpenseForm()"><b>−</b><span>Novo gasto</span></button>
+      </div>
+      <div class="cards">
+        <article class="card"><span class="kpi-label"><i class="kpi-icon">↗</i> Faturamento</span><strong id="kpiRevenue">R$ 0,00</strong></article>
+        <article class="card"><span class="kpi-label"><i class="kpi-icon">◈</i> Custo produtos</span><strong id="kpiCost">R$ 0,00</strong></article>
+        <article class="card"><span class="kpi-label"><i class="kpi-icon">↘</i> Gastos</span><strong id="kpiExpenses">R$ 0,00</strong></article>
+        <article class="card"><span class="kpi-label"><i class="kpi-icon">✓</i> Lucro líquido</span><strong id="kpiProfit">R$ 0,00</strong></article>
+        <article class="card"><span class="kpi-label"><i class="kpi-icon">▣</i> Itens em estoque</span><strong id="kpiStock">0</strong></article>
+        <article class="card"><span class="kpi-label"><i class="kpi-icon">◇</i> Valor do estoque</span><strong id="kpiStockValue">R$ 0,00</strong></article>
+      </div>
+
+      <div class="v12-closing">
+  <div><strong>📅 Fechamento do dia</strong><small>Faturamento, lucro, vendas e formas de pagamento.</small></div>
+  <button type="button" onclick="showScreen('more'); setTimeout(()=>document.getElementById('closingDate')?.scrollIntoView({behavior:'smooth',block:'center'}),100)">Abrir</button>
+</div>
+<article class="panel">
+        <div class="panel-title">Faturamento x lucro por mês</div>
+        <canvas id="monthlyChart" height="220"></canvas>
+      </article>
+
+      <article class="panel">
+        <div class="panel-title">Estoque baixo</div>
+        <div id="lowStock"></div>
+      </article>
+    </section>
+
+    <section id="sales" class="screen">
+      <div class="section-head"><div><h1>Vendas</h1><p>Registre e acompanhe suas vendas</p></div><button class="primary" onclick="openSaleForm()">+ Venda</button></div>
+      <div class="filters"><input id="salesSearch" placeholder="🔎 Buscar produto..." /><input id="salesMonth" type="month"></div>
+      <div id="salesSummary" class="mini-summary"></div>
+      <div id="salesList" class="list"></div>
+    </section>
+
+    <section id="stock" class="screen">
+      <div class="section-head"><div><h1>Estoque</h1><p>Produtos e quantidades</p></div><button class="primary" onclick="openProductForm()">+ Produto</button></div>
+      <div class="filters"><input id="stockSearch" placeholder="🔎 Buscar produto..." /><select id="stockStatus" class="select"><option value="all">Todos</option><option value="low">Estoque baixo</option><option value="ok">Estoque normal</option></select></div>
+      <div id="stockList" class="list"></div>
+    </section>
+
+    <section id="expenses" class="screen">
+      <div class="section-head"><div><h1>Gastos</h1><p>Controle suas despesas</p></div><button class="primary" onclick="openExpenseForm()">+ Gasto</button></div>
+      <div class="filters"><input id="expenseSearch" placeholder="🔎 Buscar gasto..." /><input id="expenseMonth" type="month"></div>
+      <div id="expensesList" class="list"></div>
+    </section>
+
+    <section id="more" class="screen">
+      <div class="section-head"><div><h1>Relatórios</h1><p>Resumo rápido do negócio</p></div></div>
+      <article class="panel"><div class="panel-title">Resumo por categoria de gastos</div><div id="expenseCategories"></div></article>
+      <article class="panel"><div class="panel-title">Produtos mais vendidos</div><div id="topProducts"></div></article>
+      <article class="panel"><div class="panel-title">Vendas por forma de pagamento</div><div id="paymentSummary"></div></article>
+      <article class="panel closing-panel">
+        <div class="closing-head"><div><div class="eyebrow">CAIXA</div><div class="panel-title">Fechamento do dia</div></div><input id="closingDate" type="date"></div>
+        <div id="closingSummary" class="closing-grid"></div>
+        <div id="closingPayments" class="closing-payments"></div>
+        <div id="closingFooter" class="closing-footer"></div>
+      </article>
+      <div class="section-head"><div><h1>Dados</h1><p>Backup e restauração</p></div></div>
+      <article class="panel">
+        <h2>Backup e restauração</h2>
+        <p class="muted">Exporte uma cópia completa dos produtos, vendas e gastos. Guarde o arquivo fora do celular para ter uma cópia segura.</p>
+        <div class="button-row">
+          <button class="secondary" id="exportBtn">📥 Exportar backup</button>
+          <label class="secondary file-label">📤 Importar backup<input id="importInput" type="file" accept=".json,application/json"></label>
+        </div>
+        <div id="backupStatus" class="backup-status"></div>
+        <small class="muted">Antes de restaurar ou apagar dados, o aplicativo mantém uma cópia de segurança local.</small>
+      </article>
+      <article class="panel">
+        <h2>Backup automático</h2>
+        <p class="muted">O aplicativo pode fazer uma cópia automática quando houver alterações novas.</p>
+        <div class="auto-backup-box">
+          <div class="auto-row"><label for="autoBackupEnabled">Ativar backup automático</label><input id="autoBackupEnabled" type="checkbox"></div>
+          <div class="auto-row"><label for="autoBackupInterval">Frequência</label><select id="autoBackupInterval"><option value="20">A cada 20 minutos</option><option value="60">A cada 1 hora</option><option value="1440">Uma vez por dia</option></select></div>
+          <div class="auto-status" id="autoBackupStatus"></div>
+          <p class="small-note">O backup automático local é salvo no armazenamento do navegador. Para proteção contra perda do aparelho, ative também a nuvem.</p>
+        </div>
+      </article>
+      <article class="panel">
+        <h2>☁️ Backup na nuvem</h2>
+        <p class="muted">Escolha onde manter uma cópia fora do aparelho. O Google Drive usa a autorização oficial do Google.</p>
+        <div class="auto-backup-box">
+          <div class="auto-row"><label for="cloudProvider">Destino</label><select id="cloudProvider"><option value="supabase">Supabase</option><option value="gdrive">Google Drive</option></select></div>
+          <div id="supabaseCloudBox">
+            <div class="auto-row"><label for="cloudBackupEnabled">Sincronizar automaticamente</label><input id="cloudBackupEnabled" type="checkbox"></div>
+            <div class="cloud-fields">
+              <input id="supabaseUrl" type="text" placeholder="URL do projeto Supabase">
+              <input id="supabaseAnonKey" type="text" placeholder="Chave pública anon">
+            </div>
+            <div class="button-row" style="margin-top:12px">
+              <button class="secondary" id="cloudTestBtn">Testar conexão</button>
+              <button class="primary" id="cloudSyncBtn">☁️ Salvar na nuvem agora</button>
+            </div>
+          </div>
+          <div id="gdriveCloudBox" style="display:none">
+            <div class="cloud-fields">
+              <input id="googleClientId" type="text" placeholder="Client ID OAuth do Google (ex.: 123...apps.googleusercontent.com)">
+              <input id="googleFolderName" type="text" placeholder="Nome da pasta no Google Drive" value="Minha Loja - Backups">
+            </div>
+            <div class="button-row" style="margin-top:12px">
+              <button class="secondary" id="googleConnectBtn">🔐 Conectar Google Drive</button>
+              <button class="primary" id="googleSyncBtn">☁️ Salvar no Google Drive agora</button>
+            </div>
+            <div class="auto-status" id="googleDriveStatus"></div>
+            <p class="small-note">O aplicativo pede somente acesso aos arquivos criados por ele. Para funcionar, o projeto Google precisa ter a Drive API habilitada e um OAuth Client ID para aplicativo Web. O endereço onde a loja estiver hospedada precisa estar cadastrado como origem autorizada.</p>
+          </div>
+          <p class="small-note">No Supabase, use somente a chave pública <b>anon</b>. Nunca coloque a service_role no aplicativo.</p>
+        </div>
+      </article>
+      <article class="panel">
+        <h2>Configurações</h2>
+        <button class="danger" id="clearBtn">Apagar todos os dados</button>
+      </article>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-screen="dashboard">⌂<span>Início</span></button>
+    <button class="nav-item" data-screen="sales">＋<span>Vendas</span></button>
+    <button class="nav-item" data-screen="stock">▣<span>Estoque</span></button>
+    <button class="nav-item" data-screen="expenses">−<span>Gastos</span></button>
+    <button class="nav-item" data-screen="more">•••<span>Mais</span></button>
+  </nav>
+
+  <div id="modal" class="modal hidden">
+    <div class="modal-box">
+      <div class="modal-head"><h2 id="modalTitle"></h2><button id="closeModal" class="close">×</button></div>
+      <form id="modalForm"></form>
+    </div>
+  </div>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="app-v12-8.js"></script>
+</body>
+</html>

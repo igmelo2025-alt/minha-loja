@@ -1,0 +1,22 @@
+MINHA LOJA V12.8 — PUBLICAÇÃO NO GITHUB PAGES
+
+1. Crie um repositório no GitHub.
+2. Envie TODOS os arquivos desta pasta para a raiz do repositório.
+3. No GitHub, abra Settings > Pages.
+4. Em Source, selecione Deploy from a branch.
+5. Escolha a branch principal (normalmente main) e a pasta / (root).
+6. Salve e aguarde a publicação.
+7. Abra o endereço HTTPS fornecido pelo GitHub Pages.
+
+Depois que o site estiver publicado:
+- Volte ao Google Cloud Console.
+- Em Credenciais > seu cliente OAuth Web, coloque EXATAMENTE o endereço principal do site em "Origens JavaScript autorizadas".
+- Não coloque file:// e não coloque uma página específica como /index.html.
+- Exemplo: https://seuusuario.github.io/minha-loja
+
+No aplicativo:
+Configurações > Backup > Google Drive > informe o Client ID e conecte.
+
+ATENÇÃO:
+O repositório/site do GitHub Pages pode ficar público. Não envie senhas, chaves secretas, tokens ou dados de clientes para o repositório.
+O Client ID OAuth pode aparecer no código do aplicativo; o client secret NÃO deve ser colocado no aplicativo.

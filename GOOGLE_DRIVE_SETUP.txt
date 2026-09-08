@@ -1,0 +1,18 @@
+MINHA LOJA V12.8 — GOOGLE DRIVE
+
+A integração usa OAuth 2.0 oficial do Google e a Drive API com o escopo drive.file.
+Esse escopo permite que a Minha Loja crie e gerencie os arquivos que ela própria criou, sem pedir acesso geral ao Drive.
+
+ANTES DE USAR:
+1. No Google Cloud, crie/seleciona um projeto.
+2. Ative a Google Drive API.
+3. Crie um OAuth 2.0 Client ID do tipo Web application.
+4. Cadastre como Authorized JavaScript origin o endereço HTTPS onde a Minha Loja estiver publicada.
+5. Copie o Client ID para Configurações > Backup > Google Drive.
+
+IMPORTANTE:
+- O arquivo aberto diretamente como file:// pode não funcionar para OAuth. O Google exige uma origem web autorizada para o cliente.
+- Não coloque client secret no aplicativo.
+- O app usa somente o Client ID e o token temporário entregue pelo Google.
+- O app cria a pasta "Minha Loja - Backups" e coloca os JSONs de backup nela.
+- O backup automático roda enquanto o aplicativo estiver aberto; se o navegador encerrar a página, o JavaScript não consegue executar o timer em segundo plano.

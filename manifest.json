@@ -1,0 +1,10 @@
+{
+  "name": "Minha Loja",
+  "short_name": "Minha Loja",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f3f4f6",
+  "theme_color": "#111827",
+  "description": "Controle de vendas, estoque e gastos.",
+  "icons": []
+}
