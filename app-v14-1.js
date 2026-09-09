@@ -602,6 +602,8 @@ function openCloudSetupV138(){
   };
 }
 window.openCloudSetupV138=openCloudSetupV138;
+// V14.3: garante que o acesso pela tela de login funcione mesmo se o usuário tocar antes da inicialização completa do app.
+if(window.__openCloudWhenReady){window.__openCloudWhenReady=false;setTimeout(()=>openCloudSetupV138(),0);}
 const loginCloudButton=document.getElementById('loginCloudButton');
 if(loginCloudButton){loginCloudButton.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();openCloudSetupV138();});loginCloudButton.disabled=false;loginCloudButton.style.pointerEvents='auto';loginCloudButton.style.position='relative';loginCloudButton.style.zIndex='2';}
 
