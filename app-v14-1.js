@@ -538,12 +538,21 @@ async function fetchCloudV138(){
   const c=getAutoCfg(),url=normalizeUrl(c.supabaseUrl),key=String(c.supabaseAnonKey||'').trim(),code=String(c.syncCode||'').trim().toUpperCase();
   if(!url||!key)throw new Error('Configure a URL e a chave pública anon.');
   if(!code)throw new Error('Informe o código da loja.');
-  const r=await fetch(url+'/rest/v1/app_backups?select=backup,created_at&order=created_at.desc&limit=50',{headers:{apikey:key}});
-  if(!r.ok)throw new Error(await r.text());
-  const rows=await r.json();
-  const match=(rows||[]).map(x=>x?.backup).find(b=>b&&String(b.syncCode||'').toUpperCase()===code&&b.data);
-  if(!match)throw new Error('Nenhum dado encontrado para esse código da loja. Primeiro envie os dados do aparelho que possui a loja correta.');
-  return match;
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),20000);
+  try{
+    // Filtra no próprio Supabase para não baixar dezenas de backups grandes.
+    const q=url+'/rest/v1/app_backups?select=backup,created_at&backup->>syncCode=eq.'+encodeURIComponent(code)+'&order=created_at.desc&limit=1';
+    const r=await fetch(q,{headers:{apikey:key,Accept:'application/json'},signal:controller.signal,cache:'no-store'});
+    if(!r.ok)throw new Error('Supabase HTTP '+r.status+': '+(await r.text()));
+    const rows=await r.json();
+    const match=rows?.[0]?.backup;
+    if(!match||!match.data)throw new Error('Nenhum dado encontrado para esse código da loja. Primeiro envie os dados do aparelho que possui a loja correta.');
+    return match;
+  }catch(e){
+    if(e?.name==='AbortError')throw new Error('O download demorou mais de 20 segundos. Verifique a conexão com a internet e tente novamente.');
+    throw e;
+  }finally{clearTimeout(timer);}
 }
 function localChangedAt(){try{return localStorage.getItem('minha_loja_local_changed_at')||''}catch(e){return ''}}
 async function pullCloudV138(showAlert=true,fromLogin=false){
@@ -582,14 +591,19 @@ function openCloudSetupV138(){
   document.body.appendChild(box);box.classList.remove('hidden');
   const close=()=>box.remove();document.getElementById('v138SetupClose').onclick=close;
   document.getElementById('v138SetupPull').onclick=async()=>{
+    const btn=document.getElementById('v138SetupPull');
     const url=document.getElementById('v138SetupUrl').value.trim(),key=document.getElementById('v138SetupKey').value.trim(),code=document.getElementById('v138SetupCode').value.trim().toUpperCase();
     if(!url||!key||!code){alert('Preencha os três campos.');return;}
+    if(btn){btn.disabled=true;btn.textContent='⏳ Baixando dados...';btn.style.opacity='.65';}
     setSyncConfig({supabaseUrl:url,supabaseAnonKey:key,syncCode:code});
-    const ok=await pullCloudV138(true,true);if(ok){close();location.reload();}
+    const ok=await pullCloudV138(true,true);
+    if(ok){close();location.reload();}
+    else if(btn){btn.disabled=false;btn.textContent='⬇️ Baixar minha loja da nuvem';btn.style.opacity='1';}
   };
 }
 window.openCloudSetupV138=openCloudSetupV138;
-document.getElementById("loginCloudButton")?.addEventListener("click",openCloudSetupV138);
+const loginCloudButton=document.getElementById('loginCloudButton');
+if(loginCloudButton){loginCloudButton.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();openCloudSetupV138();});loginCloudButton.disabled=false;loginCloudButton.style.pointerEvents='auto';loginCloudButton.style.position='relative';loginCloudButton.style.zIndex='2';}
 
 function wireV138Sync(){
   const codeEl=document.getElementById('syncStoreCode'),enEl=document.getElementById('cloudSyncEnabledV138');
