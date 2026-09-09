@@ -143,38 +143,72 @@ function saleRowHtml(index=0){
 }
 function openSaleForm(){
   if(!db.products.length){alert("Cadastre um produto primeiro.");return;}
+  const available=db.products.filter(p=>stockCurrent(p)>0);
+  if(!available.length){alert("Não há produtos com estoque disponível.");return;}
   openModal("Registrar venda",`<div class="form-grid">
     <div class="field"><label>Data</label><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required></div>
     <div class="field"><label>Forma de pagamento</label><select name="payment" class="select"><option>Pix</option><option>Dinheiro</option><option>Cartão</option><option>Outro</option></select></div>
-    <div style="grid-column:1/-1"><div class="panel-title" style="margin-bottom:8px">Itens da venda</div><div id="saleLines">${saleRowHtml(0)}</div><button type="button" class="secondary" id="addSaleItem" style="margin-top:10px">+ Adicionar outro item</button><div id="saleGrandTotal" class="auto-status" style="margin-top:12px"></div></div>
+    <div style="grid-column:1/-1">
+      <div class="panel-title" style="margin-bottom:8px">Produtos disponíveis em estoque</div>
+      <div style="font-size:13px;opacity:.7;margin-bottom:10px">Marque os produtos que o cliente está levando e ajuste a quantidade.</div>
+      <div id="stockSaleItems">${available.map(p=>{
+        const st=stockCurrent(p), price=Number(p.salePrice||0);
+        return `<div class="stock-sale-row" data-pid="${p.id}" style="display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;padding:11px 4px;border-bottom:1px solid #eee">
+          <input type="checkbox" class="stock-sale-check" style="width:20px;height:20px">
+          <div><div style="font-weight:600">${esc(p.name)}</div><div style="font-size:12px;opacity:.65">Estoque disponível: ${st} · ${money(price)}/un.</div></div>
+          <div style="display:flex;align-items:center;gap:7px"><button type="button" class="mini stock-sale-minus">−</button><span class="stock-sale-qty" style="min-width:22px;text-align:center;font-weight:700">0</span><button type="button" class="mini stock-sale-plus">+</button></div>
+          <div class="stock-sale-total" style="min-width:82px;text-align:right;font-weight:600">${money(0)}</div>
+        </div>`;
+      }).join('')}</div>
+      <div id="saleGrandTotal" class="auto-status" style="margin-top:12px">Total da venda: <b>${money(0)}</b></div>
+    </div>
     <div class="form-actions"><button type="button" class="secondary" onclick="closeModal()">Cancelar</button><button class="primary">Finalizar venda</button></div>
   </div>`,fd=>{
-    const products=fd.getAll("productId"),qtys=fd.getAll("qty"),prices=fd.getAll("price");
-    const seen=new Set(); const items=[];
-    for(let i=0;i<products.length;i++){
-      const p=db.products.find(x=>x.id===products[i]); const qty=Number(qtys[i]); const price=Number(prices[i]);
-      if(!p||!qty||qty<1||price<0){alert("Confira os itens da venda.");return false;}
-      if(seen.has(p.id)){alert("O mesmo produto não pode ser adicionado duas vezes. Ajuste a quantidade no item existente.");return false;}
-      seen.add(p.id); items.push({p,qty,price});
-    }
+    const rows=[...document.querySelectorAll('#stockSaleItems .stock-sale-row')];
+    const items=[];
+    rows.forEach(row=>{
+      const check=row.querySelector('.stock-sale-check');
+      if(!check.checked)return;
+      const p=db.products.find(x=>x.id===row.dataset.pid); const qty=Number(row.querySelector('.stock-sale-qty').textContent||0);
+      if(p&&qty>0)items.push({p,qty,price:Number(p.salePrice||0)});
+    });
+    if(!items.length){alert("Marque pelo menos um produto.");return false;}
     const excess=items.filter(x=>x.qty>stockCurrent(x.p));
-    if(excess.length){const names=excess.map(x=>`${x.p.name} (${x.qty} > ${stockCurrent(x.p)})`).join("\n");if(!confirm("A quantidade ultrapassa o estoque em:\n\n"+names+"\n\nDeseja registrar mesmo assim?"))return false;}
+    if(excess.length){alert("A quantidade selecionada ultrapassa o estoque de:\n\n"+excess.map(x=>`${x.p.name} (${x.qty} > ${stockCurrent(x.p)})`).join("\n"));return false;}
     const groupId=uid(),date=fd.get("date"),payment=fd.get("payment");
-    items.forEach(x=>db.sales.push({id:uid(),saleGroupId:groupId,date,productId:x.p.id,productName:x.p.name,qty:x.qty,price:x.price,cost:Number(x.p.cost),payment}));
+    items.forEach(x=>db.sales.push({id:uid(),saleGroupId:groupId,date,productId:x.p.id,productName:x.p.name,qty:x.qty,price:x.price,cost:Number(x.p.cost||0),payment}));
     return save();
   });
-  const lines=document.getElementById("saleLines"), totalEl=document.getElementById("saleGrandTotal");
-  function setupLine(line){
-    const sel=line.querySelector(".sale-product"),price=line.querySelector(".sale-price"),remove=line.querySelector(".sale-remove");
-    const fill=()=>{const p=db.products.find(x=>x.id===sel.value);if(p&&(!price.value||price.dataset.auto==='1')){price.value=Number(p.salePrice||0).toFixed(2);price.dataset.auto='1';} updateTotal();};
-    price.addEventListener("input",()=>price.dataset.auto='0'); sel.addEventListener("change",fill); line.querySelector(".sale-qty").addEventListener("input",updateTotal);
-    if(remove) remove.addEventListener("click",()=>{line.remove();[...lines.children].forEach((x,i)=>x.querySelector('.sale-remove').style.display=i?'inline-block':'none');updateTotal();});
-    fill();
+  const rows=[...document.querySelectorAll('#stockSaleItems .stock-sale-row')];
+  function updateRow(row,forceCheck){
+    const p=db.products.find(x=>x.id===row.dataset.pid); if(!p)return;
+    const max=stockCurrent(p), check=row.querySelector('.stock-sale-check'), qtyEl=row.querySelector('.stock-sale-qty');
+    let q=Math.max(0,Math.min(max,Number(qtyEl.textContent)||0));
+    if(forceCheck && q===0)q=1;
+    qtyEl.textContent=q;
+    check.checked=q>0;
+    row.querySelector('.stock-sale-total').textContent=money(q*Number(p.salePrice||0));
+    updateGrand();
   }
-  function updateTotal(){let total=0;lines.querySelectorAll('.sale-line').forEach(l=>{total+=Number(l.querySelector('.sale-qty').value||0)*Number(l.querySelector('.sale-price').value||0)});totalEl.innerHTML=`Total da venda: <b>${money(total)}</b>`;}
-  setupLine(lines.querySelector('.sale-line'));
-  document.getElementById("addSaleItem").addEventListener("click",()=>{const d=document.createElement('div');d.innerHTML=saleRowHtml(lines.children.length);const line=d.firstElementChild;lines.appendChild(line);setupLine(line);});
-  updateTotal();
+  function updateGrand(){
+    let total=0;
+    rows.forEach(row=>{const p=db.products.find(x=>x.id===row.dataset.pid);total+=(Number(row.querySelector('.stock-sale-qty').textContent)||0)*Number(p?.salePrice||0);});
+    const el=document.getElementById('saleGrandTotal');if(el)el.innerHTML=`Total da venda: <b>${money(total)}</b>`;
+  }
+  rows.forEach(row=>{
+    const p=db.products.find(x=>x.id===row.dataset.pid), max=stockCurrent(p);
+    row.querySelector('.stock-sale-check').addEventListener('change',()=>updateRow(row,true));
+    row.querySelector('.stock-sale-plus').addEventListener('click',()=>{
+      const q=Number(row.querySelector('.stock-sale-qty').textContent)||0;
+      if(q>=max){alert('Quantidade máxima disponível para '+p.name+': '+max);return;}
+      row.querySelector('.stock-sale-qty').textContent=q+1;updateRow(row,false);
+    });
+    row.querySelector('.stock-sale-minus').addEventListener('click',()=>{
+      const q=Math.max(0,(Number(row.querySelector('.stock-sale-qty').textContent)||0)-1);
+      row.querySelector('.stock-sale-qty').textContent=q;updateRow(row,false);
+    });
+  });
+  updateGrand();
 }
 function openProductForm(id){
   const p=db.products.find(x=>x.id===id)||{name:"",code:"",category:"",initial:0,entries:0,cost:0,salePrice:0,min:0};
