@@ -589,6 +589,7 @@ function openCloudSetupV138(){
   };
 }
 window.openCloudSetupV138=openCloudSetupV138;
+document.getElementById("loginCloudButton")?.addEventListener("click",openCloudSetupV138);
 
 function wireV138Sync(){
   const codeEl=document.getElementById('syncStoreCode'),enEl=document.getElementById('cloudSyncEnabledV138');
