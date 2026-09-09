@@ -277,5 +277,143 @@ body.login-locked{overflow:hidden}
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="app-v12-12.js"></script>
+
+<!-- V13: Venda por seleção de estoque -->
+<div id="v13SaleModal" class="v13-sale-modal" hidden>
+  <div class="v13-sale-card">
+    <div class="v13-sale-head">
+      <div>
+        <h2>Nova venda</h2>
+        <p>Marque os produtos que o cliente está levando.</p>
+      </div>
+      <button type="button" id="v13SaleClose" aria-label="Fechar">×</button>
+    </div>
+    <div id="v13SaleProducts" class="v13-sale-products"></div>
+    <div class="v13-sale-footer">
+      <strong>Total: <span id="v13SaleTotal">R$ 0,00</span></strong>
+      <button type="button" id="v13SaleConfirm">Confirmar venda</button>
+    </div>
+  </div>
+</div>
+<style>
+.v13-sale-modal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:14px}
+.v13-sale-modal[hidden]{display:none}
+.v13-sale-card{background:#fff;border-radius:18px;width:min(680px,100%);max-height:90vh;overflow:auto;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.v13-sale-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.v13-sale-head h2{margin:0 0 4px}.v13-sale-head p{margin:0 0 14px;opacity:.7;font-size:14px}
+#v13SaleClose{border:0;background:transparent;font-size:30px;line-height:1;cursor:pointer}
+.v13-sale-row{display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;padding:12px 4px;border-bottom:1px solid #eee}
+.v13-sale-row input[type=checkbox]{width:20px;height:20px}
+.v13-sale-name{font-weight:600}.v13-sale-stock{font-size:12px;opacity:.65}
+.v13-sale-qty{display:flex;align-items:center;gap:8px}.v13-sale-qty button{width:30px;height:30px;border:0;border-radius:8px;cursor:pointer}
+.v13-sale-qty span{min-width:24px;text-align:center;font-weight:700}
+.v13-sale-price{min-width:82px;text-align:right;font-weight:600}
+.v13-sale-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:16px}
+#v13SaleConfirm{border:0;border-radius:10px;padding:11px 16px;cursor:pointer;font-weight:700}
+@media(max-width:520px){.v13-sale-row{grid-template-columns:auto 1fr;}.v13-sale-price{grid-column:2;text-align:left}.v13-sale-qty{grid-column:2}}
+</style>
+<script id="v13-sales-selection">
+(function(){
+  const modal=()=>document.getElementById('v13SaleModal');
+  const list=()=>document.getElementById('v13SaleProducts');
+  const totalEl=()=>document.getElementById('v13SaleTotal');
+  const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0);
+  function getDB(){
+    try{return JSON.parse(localStorage.getItem('minha_loja_v1')||'{}')||{};}catch(e){return {};}
+  }
+  function products(){
+    const d=getDB();
+    return Array.isArray(d.products)?d.products:[];
+  }
+  function price(p){return Number(p.salePrice ?? p.price ?? p.valorVenda ?? p.precoVenda ?? 0)||0}
+  function stock(p){return Math.max(0,Number(p.stock ?? p.estoque ?? p.quantity ?? p.quantidade ?? 0)||0)}
+  function id(p,i){return String(p.id ?? p.productId ?? p.codigo ?? ('p'+i))}
+  const state=new Map();
+
+  function render(){
+    const ps=products().filter(p=>stock(p)>0);
+    list().innerHTML=ps.length?ps.map((p,i)=>{
+      const k=id(p,i), q=state.get(k)||0;
+      const n=String(p.name ?? p.nome ?? p.productName ?? 'Produto');
+      const s=stock(p), pr=price(p);
+      return `<div class="v13-sale-row" data-v13-id="${k}">
+        <input type="checkbox" class="v13-check" ${q>0?'checked':''} aria-label="Selecionar ${n}">
+        <div><div class="v13-sale-name">${n}</div><div class="v13-sale-stock">Estoque disponível: ${s}</div></div>
+        <div class="v13-sale-qty"><button type="button" class="v13-minus">−</button><span>${q}</span><button type="button" class="v13-plus">+</button></div>
+        <div class="v13-sale-price">${money(pr*q)}</div>
+      </div>`;
+    }).join(''):'<p>Nenhum produto com estoque disponível.</p>';
+    ps.forEach((p,i)=>{
+      const row=list().querySelector(`[data-v13-id="${CSS.escape(id(p,i))}"]`);
+      if(!row)return;
+      const k=id(p,i), s=stock(p);
+      row.querySelector('.v13-check').onchange=e=>{state.set(k,e.target.checked?Math.max(1,state.get(k)||1):0);render();};
+      row.querySelector('.v13-minus').onclick=()=>{let q=state.get(k)||0;q=Math.max(0,q-1);state.set(k,q);render();};
+      row.querySelector('.v13-plus').onclick=()=>{let q=state.get(k)||0;q=Math.min(s,q+1);state.set(k,q);render();};
+    });
+    let total=0; ps.forEach((p,i)=>total+=price(p)*(state.get(id(p,i))||0));
+    totalEl().textContent=money(total);
+  }
+
+  function open(){state.clear();render();modal().hidden=false;}
+  function close(){modal().hidden=true;}
+  function findProduct(k){return products().find((p,i)=>id(p,i)===k);}
+
+  function confirm(){
+    const selected=[];
+    products().forEach((p,i)=>{
+      const q=state.get(id(p,i))||0;
+      if(q>0)selected.push({p,q});
+    });
+    if(!selected.length){alert('Selecione pelo menos um produto.');return;}
+    const d=getDB();
+    if(!Array.isArray(d.sales))d.sales=[];
+    if(!Array.isArray(d.products))d.products=[];
+    const now=new Date().toISOString();
+    let total=0;
+    const items=[];
+    for(const x of selected){
+      const p=x.p,q=x.q,s=stock(p);
+      if(q>s){alert('A quantidade selecionada ultrapassa o estoque de '+(p.name||p.nome||'produto')+'.');return;}
+      const pr=price(p); total+=pr*q;
+      items.push({productId:p.id??null,productName:p.name??p.nome??'Produto',quantity:q,unitPrice:pr,total:pr*q});
+    }
+    // Baixa no estoque usando o mesmo objeto de produto.
+    selected.forEach(x=>{
+      const idx=d.products.indexOf(x.p);
+      if(idx>=0){
+        const current=stock(d.products[idx]);
+        if('stock' in d.products[idx]) d.products[idx].stock=current-x.q;
+        else if('estoque' in d.products[idx]) d.products[idx].estoque=current-x.q;
+        else if('quantity' in d.products[idx]) d.products[idx].quantity=current-x.q;
+        else d.products[idx].stock=current-x.q;
+      }
+    });
+    d.sales.push({id:'sale_'+Date.now(),date:now,items,total,quantity:items.reduce((a,b)=>a+b.quantity,0),product:items.length===1?items[0].productName:'Venda com múltiplos itens'});
+    localStorage.setItem('minha_loja_v1',JSON.stringify(d));
+    close();
+    alert('Venda registrada com sucesso! Total: '+money(total));
+    location.reload();
+  }
+
+  function init(){
+    const btns=[...document.querySelectorAll('button,a')];
+    const candidates=btns.filter(el=>/nova venda|\+ venda|registrar venda|venda/i.test((el.textContent||'').trim()));
+    candidates.forEach(el=>{
+      if(el.dataset.v13Bound)return;
+      el.dataset.v13Bound='1';
+      el.addEventListener('click',function(e){
+        const t=(el.textContent||'').trim();
+        if(/nova venda|\+ venda|registrar venda/i.test(t)){e.preventDefault();e.stopImmediatePropagation();open();}
+      },true);
+    });
+    document.getElementById('v13SaleClose')?.addEventListener('click',close);
+    document.getElementById('v13SaleConfirm')?.addEventListener('click',confirm);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+  window.v13OpenSale=open;
+})();
+</script>
+
 </body>
 </html>
