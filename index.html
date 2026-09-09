@@ -49,65 +49,41 @@ body.login-locked{overflow:hidden}
 .login-recover{margin-top:10px;width:100%;border:0;background:transparent;color:#8a5a43;text-decoration:underline;font-size:13px;padding:8px;cursor:pointer}
 
 </style>
-<script id="v12-11-login-guard">
+<script id="v12-12-login-guard">
 (function(){
   const KEY='minha_loja_v1', SESSION='minha_loja_login_session', REMEMBER='minha_loja_login_remember';
   const DEFAULT={id:'admin',username:'admin',name:'Administrador',role:'admin',passwordHash:'03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4'};
   function hash(p){return crypto.subtle.digest('SHA-256',new TextEncoder().encode(String(p))).then(b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''));}
   function readDB(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')||{};}catch(e){return {};}}
-  function getUsers(){
-    const d=readDB();
-    if(!Array.isArray(d.users)) d.users=[];
-    if(!d.users.some(x=>x && x.username==='admin')){
-      d.users.push({...DEFAULT});
-      try{localStorage.setItem(KEY,JSON.stringify(d));}catch(e){}
-    }
+  function ensureSingleAdmin(){
+    const d=readDB(); if(!Array.isArray(d.users)) d.users=[];
+    if(!d.users.length){d.users=[{...DEFAULT}]; try{localStorage.setItem(KEY,JSON.stringify(d));}catch(e){} return d.users;}
+    let admins=d.users.filter(x=>x&&x.role==='admin');
+    let keeper=d.users.find(x=>x&&x.username==='admin') || admins[0];
+    if(!keeper){keeper={...DEFAULT}; d.users.unshift(keeper);}
+    d.users=d.users.map(x=>x===keeper?{...x,id:'admin',username:'admin',role:'admin',name:x.name||'Administrador',passwordHash:x.passwordHash||DEFAULT.passwordHash}:{...x,role:'user'});
+    try{localStorage.setItem(KEY,JSON.stringify(d));}catch(e){}
     return d.users;
   }
-  async function recoverAdmin(){
-    const d=readDB();
-    if(!Array.isArray(d.users)) d.users=[];
-    const i=d.users.findIndex(x=>x && x.username==='admin');
-    if(i>=0){
-      d.users[i]={...d.users[i],id:d.users[i].id||'admin',username:'admin',name:d.users[i].name||'Administrador',role:'admin',passwordHash:DEFAULT.passwordHash};
-    }else d.users.push({...DEFAULT});
-    try{
-      localStorage.setItem(KEY,JSON.stringify(d));
-      sessionStorage.removeItem(SESSION);
-      localStorage.removeItem(SESSION);
-      localStorage.removeItem(REMEMBER);
-      alert('Acesso do administrador restaurado para admin / 1234. Seus produtos, vendas e gastos foram preservados.');
-      const p=document.getElementById('loginPass'); if(p)p.value='';
-    }catch(e){alert('Não foi possível restaurar o acesso neste aparelho.');}
-  }
+  function getUsers(){return ensureSingleAdmin();}
   function initLogin(){
     const screen=document.getElementById('loginScreen'),form=document.getElementById('loginForm'),error=document.getElementById('loginError');
     if(!screen||!form||!error)return;
+    getUsers();
     let saved=null;
     try{saved=JSON.parse(sessionStorage.getItem(SESSION)||'null');if(!saved&&localStorage.getItem(REMEMBER)==='1')saved=JSON.parse(localStorage.getItem(SESSION)||'null');}catch(e){}
     if(saved){screen.classList.add('hidden');document.body.classList.remove('login-locked');return;}
     screen.classList.remove('hidden');document.body.classList.add('login-locked');
-    document.getElementById('recoverLoginBtn')?.addEventListener('click',recoverAdmin);
     form.addEventListener('submit',async function(e){
       e.preventDefault();
       const u=document.getElementById('loginUser').value.trim().toLowerCase(),p=document.getElementById('loginPass').value;
-      const user=getUsers().find(x=>x && x.username===u);
-      if(user){
-        const h=await hash(p);
-        if(h===user.passwordHash){
-          const safe={id:user.id,username:user.username,name:user.name,role:user.role};
-          try{
-            const remember=document.getElementById('rememberLogin').checked;
-            if(remember){localStorage.setItem(SESSION,JSON.stringify(safe));localStorage.setItem(REMEMBER,'1');sessionStorage.removeItem(SESSION);}
-            else{sessionStorage.setItem(SESSION,JSON.stringify(safe));localStorage.removeItem(SESSION);localStorage.removeItem(REMEMBER);}
-            if(window.onMinhaLojaLogin)window.onMinhaLojaLogin(safe);
-          }catch(e){}
-          error.textContent='';screen.classList.add('hidden');document.body.classList.remove('login-locked');return;
-        }
+      const user=getUsers().find(x=>x&&x.username===u);
+      if(user&&await hash(p)===user.passwordHash){
+        const safe={id:user.id,username:user.username,name:user.name,role:user.role};
+        try{const remember=document.getElementById('rememberLogin').checked;if(remember){localStorage.setItem(SESSION,JSON.stringify(safe));localStorage.setItem(REMEMBER,'1');sessionStorage.removeItem(SESSION);}else{sessionStorage.setItem(SESSION,JSON.stringify(safe));localStorage.removeItem(SESSION);localStorage.removeItem(REMEMBER);}}catch(e){}
+        if(window.onMinhaLojaLogin)window.onMinhaLojaLogin(safe); error.textContent='';screen.classList.add('hidden');document.body.classList.remove('login-locked');return;
       }
-      error.textContent='Usuário ou senha incorretos.';
-      document.getElementById('loginPass').value='';
-      document.getElementById('loginPass').focus();
+      error.textContent='Usuário ou senha incorretos.';document.getElementById('loginPass').value='';document.getElementById('loginPass').focus();
     });
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initLogin);else initLogin();
@@ -134,10 +110,9 @@ body.login-locked{overflow:hidden}
         <label class="login-field">Senha<input id="loginPass" name="password" type="password" autocomplete="current-password" placeholder="Senha" required></label>
         <label class="login-check"><input id="rememberLogin" type="checkbox"> Manter conectado neste aparelho</label>
         <button class="login-button" type="submit">Entrar</button>
-        <button id="recoverLoginBtn" type="button" class="login-recover">Recuperar acesso do administrador</button>
         <div id="loginError" class="login-error" role="alert"></div>
       </form>
-      <small class="login-hint">Primeiro acesso: <b>admin</b> / <b>1234</b>. Altere a senha depois de entrar.</small>
+      <small class="login-hint">Acesse com sua conta. O administrador é único e controla as demais contas.</small>
     </div>
   </section>
 
@@ -276,7 +251,7 @@ body.login-locked{overflow:hidden}
         <h2>👤 Usuários e acesso</h2>
         <div class="user-toolbar"><div id="currentUserInfo" class="user-me"></div><button class="primary" id="addUserBtn">+ Novo usuário</button></div>
         <div id="usersList" class="list"></div>
-        <p class="small-note">O administrador pode criar usuários, alterar nomes, perfis e senhas. Usuários comuns não podem gerenciar contas nem apagar todos os dados.</p>
+        <p class="small-note">O administrador pode gerenciar todas as contas. Cada usuário pode alterar somente os próprios dados de acesso.</p>
       </article>
       <article class="panel">
         <h2>Configurações</h2>
@@ -301,6 +276,6 @@ body.login-locked{overflow:hidden}
   </div>
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app-v12-10.js"></script>
+  <script src="app-v12-12.js"></script>
 </body>
 </html>
