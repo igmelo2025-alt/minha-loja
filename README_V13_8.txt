@@ -1,4 +1,4 @@
-Minha Loja V13.8 — Sincronização entre dispositivos
+Minha Loja V13.9 — Sincronização online corrigida
 
 O aplicativo continua funcionando localmente e agora pode sincronizar os dados entre aparelhos usando a tabela app_backups do Supabase já usada pelo backup em nuvem.
 
@@ -22,3 +22,6 @@ SEGURANÇA
 
 OBSERVAÇÃO
 A sincronização usa o modelo “última versão confirmada”. Se dois aparelhos forem alterados offline ao mesmo tempo, a versão enviada por último pode substituir a anterior. Para uso simultâneo intenso, o próximo passo recomendado é autenticação e sincronização por registros individuais.
+
+
+V13.9: compatibilidade corrigida com chaves Supabase Publishable (sb_publishable_...). As chamadas REST usam a chave somente no cabeçalho apikey, conforme o formato atual das chaves do Supabase.
