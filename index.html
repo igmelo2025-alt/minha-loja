@@ -101,6 +101,12 @@ body.login-locked{overflow:hidden}
 <style id="v13-sale-stock-style">
 .sale-stock-list{display:flex;flex-direction:column;gap:8px}.sale-stock-item{border:1px solid #eadfd6;border-radius:12px;padding:11px;display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center}.sale-check-wrap{display:flex;align-items:center;gap:10px;cursor:pointer}.sale-check{width:20px;height:20px}.sale-stock-info{display:flex;flex-direction:column;gap:3px}.sale-stock-info small{opacity:.7}.sale-qty-control{display:flex;align-items:center;gap:8px}.sale-qty-display{min-width:24px;text-align:center;font-weight:700}.sale-item-total{min-width:80px;text-align:right}.sale-qty-control button:disabled{opacity:.4}@media(max-width:560px){.sale-stock-item{grid-template-columns:1fr auto}.sale-item-total{grid-column:2;text-align:right}.sale-qty-control{grid-column:1}}
 </style>
+
+<style id="v13-8-cloud-sync-style">
+.login-cloud-button{margin-top:12px;width:100%;padding:11px 14px;border:1px solid #e7d8ca;border-radius:12px;background:#fffaf4;color:#6b3a25;font-weight:700;cursor:pointer}.login-cloud-button:hover{filter:brightness(.98)}
+#syncStoreCode{letter-spacing:2px;font-weight:800;text-transform:uppercase}
+</style>
+
 </head>
 <body>
   <section id="loginScreen" class="login-screen">
@@ -117,6 +123,8 @@ body.login-locked{overflow:hidden}
         <div id="loginError" class="login-error" role="alert"></div>
       </form>
       <small class="login-hint">Acesse com sua conta. O administrador é único e controla as demais contas.</small>
+    <button type="button" class="login-cloud-button" onclick="window.openCloudSetupV138&&window.openCloudSetupV138()">🌐 Acessar minha loja em outro aparelho</button>
+
     </div>
   </section>
 
@@ -251,6 +259,26 @@ body.login-locked{overflow:hidden}
           <p class="small-note">No Supabase, use somente a chave pública <b>anon</b>. Nunca coloque a service_role no aplicativo.</p>
         </div>
       </article>
+      <article class="panel" id="cloudSyncPanel">
+        <h2>🔄 Sincronização entre dispositivos</h2>
+        <p class="muted">Use a mesma conexão Supabase e o mesmo código da loja no celular, tablet ou computador. As alterações podem ser enviadas e baixadas entre os aparelhos.</p>
+        <div class="auto-backup-box">
+          <div class="cloud-fields">
+            <input id="syncStoreCode" type="text" placeholder="Código da loja" autocomplete="off">
+          </div>
+          <div class="button-row" style="margin-top:12px">
+            <button class="secondary" id="generateSyncCodeBtn">Gerar código</button>
+            <button class="secondary" id="copySyncCodeBtn">📋 Copiar código</button>
+          </div>
+          <div class="auto-row"><label for="cloudSyncEnabledV138">Ativar sincronização automática</label><input id="cloudSyncEnabledV138" type="checkbox"></div>
+          <div class="button-row" style="margin-top:12px">
+            <button class="secondary" id="pullCloudBtnV138">⬇️ Baixar da nuvem</button>
+            <button class="primary" id="pushCloudBtnV138">⬆️ Enviar para a nuvem</button>
+          </div>
+          <div class="auto-status" id="cloudSyncStatusV138"></div>
+          <p class="small-note"><b>Importante:</b> na primeira configuração, escolha qual aparelho possui os dados corretos e envie esses dados para a nuvem. Em outro aparelho, primeiro baixe os dados da nuvem e depois entre com o mesmo usuário e senha.</p>
+        </div>
+      </article>
       <article class="panel" id="usersPanel">
         <h2>👤 Usuários e acesso</h2>
         <div class="user-toolbar"><div id="currentUserInfo" class="user-me"></div><button class="primary" id="addUserBtn">+ Novo usuário</button></div>
@@ -280,6 +308,6 @@ body.login-locked{overflow:hidden}
   </div>
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app-v13-7.js"></script>
+  <script src="app-v13-8.js"></script>
 </body>
 </html>
