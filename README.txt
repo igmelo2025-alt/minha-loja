@@ -1,4 +1,4 @@
-Minha Loja PWA V12.6
+MINHA LOJA - V14.7
 
 Novidades:
 - Backup completo exportável em JSON com versão e data.
