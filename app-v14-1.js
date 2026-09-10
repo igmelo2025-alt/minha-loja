@@ -82,9 +82,10 @@ function viewSaleDetailsV137(groupId){
   const profit=total-cost;
   const payment=esc(rows[0].payment||"Não informado");
   const date=dateBR(rows[0].date);
+  const customer=esc(rows[0].customerName||"");
   const list=rows.map(s=>`<div class="item" style="margin-bottom:8px;padding:10px 12px"><div><b>${esc(s.productName||"Produto")}</b><div class="item-sub">${s.qty} un. · ${money(s.price)}/un.</div></div><div><b>${money(Number(s.qty||0)*Number(s.price||0))}</b></div></div>`).join("");
   openModal(cancelled?"Detalhes da venda · Cancelada":"Detalhes da venda",`<div class="form-grid">
-    <div class="auto-status" style="grid-column:1/-1"><b>Data:</b> ${date} &nbsp; · &nbsp; <b>Pagamento:</b> ${payment}</div>
+    <div class="auto-status" style="grid-column:1/-1"><b>Data:</b> ${date} &nbsp; · &nbsp; <b>Pagamento:</b> ${payment}${customer?` &nbsp; · &nbsp; <b>Cliente:</b> ${customer}`:""}</div>
     <div style="grid-column:1/-1"><div class="panel-title" style="margin-bottom:8px">Itens da venda</div>${list}</div>
     <div class="auto-status" style="grid-column:1/-1">
       <div style="display:flex;justify-content:space-between"><span>Total</span><b>${money(total)}</b></div>
@@ -92,7 +93,7 @@ function viewSaleDetailsV137(groupId){
       <div style="display:flex;justify-content:space-between"><span>Lucro</span><b class="${profit<0?"negative":"positive"}">${money(profit)}</b></div>
       ${cancelled?`<div class="negative" style="margin-top:8px;font-weight:700">❌ Esta venda está cancelada.</div>`:""}
     </div>
-    <div class="form-actions"><button type="button" class="secondary" onclick="closeModal()">Fechar</button></div>
+    <div class="form-actions"><button type="button" class="secondary" onclick="closeModal()">Fechar</button>${!cancelled?`<button type="button" class="primary" onclick="printSaleReceipt('${gid}')">🖨️ Imprimir pedido</button>`:""}</div>
   </div>`);
 }
 
@@ -177,16 +178,21 @@ function renderClosing(){
   if(!input.value) input.value=new Date().toISOString().slice(0,10);
   const date=input.value;
   const sales=db.sales.filter(s=>s.date===date&&validSale(s));
+  const expenses=db.expenses.filter(x=>x.date===date);
   const total=sales.reduce((a,s)=>a+Number(s.qty||0)*Number(s.price||0),0);
   const cost=sales.reduce((a,s)=>a+Number(s.qty||0)*Number(s.cost||0),0);
+  const expenseTotal=expenses.reduce((a,x)=>a+Number(x.value||0),0);
   const profit=total-cost;
+  const net=profit-expenseTotal;
   const items=sales.reduce((a,s)=>a+Number(s.qty||0),0);
   const payments={};
   sales.forEach(s=>{const k=s.payment||"Não informado";payments[k]=(payments[k]||0)+Number(s.qty||0)*Number(s.price||0);});
   const summary=document.getElementById("closingSummary");
   summary.innerHTML=`
     <div class="closing-card"><span>Faturamento</span><b>${money(total)}</b></div>
-    <div class="closing-card"><span>Lucro</span><b class="${profit<0?"negative":"positive"}">${money(profit)}</b></div>
+    <div class="closing-card"><span>Custo dos produtos</span><b>${money(cost)}</b></div>
+    <div class="closing-card"><span>Gastos do dia</span><b>${money(expenseTotal)}</b></div>
+    <div class="closing-card"><span>Lucro líquido</span><b class="${net<0?"negative":"positive"}">${money(net)}</b></div>
     <div class="closing-card"><span>Itens vendidos</span><b>${items}</b></div>
     <div class="closing-card"><span>Nº de vendas</span><b>${sales.length}</b></div>`;
   const pe=document.getElementById("closingPayments");
@@ -195,6 +201,45 @@ function renderClosing(){
   pe.innerHTML=entries.length?entries.map(([k,v])=>`<div class="payment-row"><span>${esc(k)}</span><strong>${money(v)}</strong></div>`).join(""):`<div class="empty">Nenhuma venda neste dia.</div>`;
   document.getElementById("closingFooter").innerHTML=sales.length?`<span>Ticket médio</span><b>${money(total/sales.length)}</b>`:`<span>Selecione uma data para consultar o fechamento.</span>`;
 }
+
+function printDailyClosing(){
+  const input=document.getElementById("closingDate");
+  const date=input?.value||new Date().toISOString().slice(0,10);
+  const sales=db.sales.filter(s=>s.date===date&&validSale(s));
+  const expenses=db.expenses.filter(x=>x.date===date);
+  const total=sales.reduce((a,s)=>a+Number(s.qty||0)*Number(s.price||0),0);
+  const cost=sales.reduce((a,s)=>a+Number(s.qty||0)*Number(s.cost||0),0);
+  const expenseTotal=expenses.reduce((a,x)=>a+Number(x.value||0),0);
+  const net=total-cost-expenseTotal;
+  const items=sales.reduce((a,s)=>a+Number(s.qty||0),0);
+  const payments={};
+  sales.forEach(s=>{const k=s.payment||"Não informado";payments[k]=(payments[k]||0)+Number(s.qty||0)*Number(s.price||0);});
+  const groups=new Map();
+  sales.forEach(s=>{const k=saleGroupKey(s);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(s);});
+  const order=["Pix","Dinheiro","Cartão","Outro","Não informado"];
+  const paymentHtml=[...order.filter(k=>payments[k]!==undefined).map(k=>[k,payments[k]]),...Object.entries(payments).filter(([k])=>!order.includes(k))].map(([k,v])=>`<div class="print-line"><span>${esc(k)}</span><b>${money(v)}</b></div>`).join("")||'<div class="print-muted">Nenhuma venda</div>';
+  const salesHtml=[...groups.values()].map((rows,i)=>{const t=rows.reduce((a,s)=>a+Number(s.qty||0)*Number(s.price||0),0);const desc=rows.map(s=>`${esc(s.productName||"Produto")} (${s.qty}x)`).join(", ");return `<div class="print-sale"><div><b>Venda ${i+1}</b> · ${esc(rows[0].payment||"Não informado")}</div><div>${desc}</div><strong>${money(t)}</strong></div>`}).join("")||'<div class="print-muted">Nenhuma venda registrada.</div>';
+  const html=`<div class="print-doc"><h1>Minha Loja</h1><h2>Fechamento do dia</h2><p>${dateBR(date)}</p><div class="print-summary"><div><span>Faturamento</span><b>${money(total)}</b></div><div><span>Custo produtos</span><b>${money(cost)}</b></div><div><span>Gastos do dia</span><b>${money(expenseTotal)}</b></div><div><span>Lucro líquido</span><b>${money(net)}</b></div><div><span>Itens vendidos</span><b>${items}</b></div><div><span>Nº de vendas</span><b>${sales.length}</b></div></div><h3>Formas de pagamento</h3>${paymentHtml}<h3>Vendas do dia</h3>${salesHtml}<footer>Impresso em ${new Date().toLocaleString("pt-BR")}</footer></div>`;
+  openPrintWindow(html,"Fechamento do dia");
+}
+
+function printSaleReceipt(groupId){
+  const rows=db.sales.filter(s=>saleGroupKey(s)===String(groupId)&&validSale(s));
+  if(!rows.length){alert("Venda não encontrada ou cancelada.");return;}
+  const total=rows.reduce((a,s)=>a+Number(s.qty||0)*Number(s.price||0),0);
+  const customer=esc(rows[0].customerName||"");
+  const items=rows.map(s=>`<div class="receipt-item"><div><b>${esc(s.productName||"Produto")}</b><small>${s.qty} x ${money(s.price)}</small></div><strong>${money(Number(s.qty||0)*Number(s.price||0))}</strong></div>`).join("");
+  const html=`<div class="print-doc receipt"><h1>Minha Loja</h1><h2>Comprovante do pedido</h2><p>${dateBR(rows[0].date)}</p>${customer?`<p><b>Cliente:</b> ${customer}</p>`:""}<div class="receipt-items">${items}</div><div class="receipt-total"><span>Total</span><b>${money(total)}</b></div><div class="print-line"><span>Pagamento</span><b>${esc(rows[0].payment||"Não informado")}</b></div><p class="print-muted">Obrigado pela preferência!</p><footer>Este documento é um comprovante do pedido e não substitui nota fiscal eletrônica.</footer></div>`;
+  openPrintWindow(html,"Comprovante do pedido");
+}
+
+function openPrintWindow(content,title){
+  const w=window.open("","_blank","width=800,height=900");
+  if(!w){alert("O navegador bloqueou a janela de impressão. Permita pop-ups para imprimir.");return;}
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>body{font-family:Arial,sans-serif;margin:0;padding:24px;color:#111}.print-doc{max-width:720px;margin:auto}.print-doc h1{text-align:center;margin:0;font-size:25px}.print-doc h2{text-align:center;margin:6px 0 2px;font-size:19px}.print-doc>p{text-align:center;margin:5px 0 18px;color:#555}.print-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:18px 0}.print-summary div{border:1px solid #ddd;padding:10px;border-radius:6px}.print-summary span{display:block;font-size:11px;color:#666}.print-summary b{display:block;margin-top:4px}.print-line{display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:7px 0}.print-sale{position:relative;border-bottom:1px solid #ddd;padding:9px 70px 9px 0;min-height:35px}.print-sale strong{position:absolute;right:0;top:9px}.receipt{max-width:420px}.receipt-items{border-top:1px solid #111;margin-top:14px}.receipt-item{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed #aaa;padding:10px 0}.receipt-item small{display:block;color:#666;margin-top:3px}.receipt-total{display:flex;justify-content:space-between;font-size:19px;border-top:2px solid #111;margin-top:10px;padding:12px 0}.print-muted{color:#666;font-size:12px}.print-doc h3{margin:18px 0 6px;border-bottom:1px solid #111;padding-bottom:5px}.print-doc footer{margin-top:22px;text-align:center;font-size:10px;color:#666}@media print{body{padding:0}.print-doc{max-width:none}.no-print{display:none}}</style></head><body>${content}<script>window.onload=function(){setTimeout(function(){window.print()},250)}</script></body></html>`);
+  w.document.close();
+}
+
 function renderReports(){
   const cats={};db.expenses.forEach(x=>cats[x.category||"Sem categoria"]=(cats[x.category||"Sem categoria"]||0)+Number(x.value||0));
   const vals=Object.entries(cats).sort((a,b)=>b[1]-a[1]);const max=vals[0]?.[1]||1;
@@ -238,6 +283,7 @@ function openSaleForm(){
   openModal("Registrar venda",`<div class="form-grid">
     <div class="field"><label>Data</label><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required></div>
     <div class="field"><label>Forma de pagamento</label><select name="payment" class="select"><option>Pix</option><option>Dinheiro</option><option>Cartão</option><option>Outro</option></select></div>
+    <div class="field"><label>Cliente (opcional)</label><input name="customerName" placeholder="Nome do cliente"></div>
     <div style="grid-column:1/-1">
       <div class="panel-title" style="margin-bottom:8px">Produtos disponíveis em estoque</div>
       <div class="field" style="margin-bottom:10px">
@@ -257,8 +303,8 @@ function openSaleForm(){
       items.push({p,qty,price:Number(p.salePrice||0)});
     });
     if(!items.length){alert("Marque pelo menos um produto e escolha a quantidade.");return false;}
-    const groupId=uid(),date=fd.get("date"),payment=fd.get("payment");
-    items.forEach(x=>db.sales.push({id:uid(),saleGroupId:groupId,date,productId:x.p.id,productName:x.p.name,qty:x.qty,price:x.price,cost:Number(x.p.cost||0),payment}));
+    const groupId=uid(),date=fd.get("date"),payment=fd.get("payment"),customerName=String(fd.get("customerName")||"").trim();
+    items.forEach(x=>db.sales.push({id:uid(),saleGroupId:groupId,date,productId:x.p.id,productName:x.p.name,qty:x.qty,price:x.price,cost:Number(x.p.cost||0),payment,customerName}));
     return save();
   });
   const totalEl=document.getElementById("saleGrandTotal");
