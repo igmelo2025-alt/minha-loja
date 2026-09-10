@@ -212,7 +212,7 @@ body.login-locked{overflow:hidden}
       <article class="panel"><div class="panel-title">Vendas por forma de pagamento</div><div id="paymentSummary"></div></article>
       <article class="panel closing-panel">
         <div class="closing-head"><div><div class="eyebrow">CAIXA</div><div class="panel-title">Fechamento do dia</div></div><input id="closingDate" type="date"></div>
-        <div class="button-row closing-print-row"><button class="primary" type="button" onclick="printDailyClosing()">🖨️ Imprimir fechamento</button></div>
+        <div class="button-row closing-print-row"><button class="secondary" type="button" onclick="downloadDailyClosingPdf()">📄 Salvar fechamento em PDF</button><button class="primary" type="button" onclick="printDailyClosing()">🖨️ Imprimir fechamento</button></div>
         <div id="closingSummary" class="closing-grid"></div>
         <div id="closingPayments" class="closing-payments"></div>
         <div id="closingFooter" class="closing-footer"></div>

@@ -93,7 +93,7 @@ function viewSaleDetailsV137(groupId){
       <div style="display:flex;justify-content:space-between"><span>Lucro</span><b class="${profit<0?"negative":"positive"}">${money(profit)}</b></div>
       ${cancelled?`<div class="negative" style="margin-top:8px;font-weight:700">❌ Esta venda está cancelada.</div>`:""}
     </div>
-    <div class="form-actions"><button type="button" class="secondary" onclick="closeModal()">Fechar</button>${!cancelled?`<button type="button" class="primary" onclick="printSaleReceipt('${gid}')">🖨️ Imprimir pedido</button>`:""}</div>
+    <div class="form-actions"><button type="button" class="secondary" onclick="closeModal()">Fechar</button>${!cancelled?`<button type="button" class="secondary" onclick="downloadSalePdf('${gid}')">📄 Salvar PDF</button><button type="button" class="primary" onclick="printSaleReceipt('${gid}')">🖨️ Imprimir pedido</button>`:""}</div>
   </div>`);
 }
 
@@ -223,6 +223,26 @@ function printDailyClosing(){
   openPrintWindow(html,"Fechamento do dia");
 }
 
+function downloadDailyClosingPdf(){
+  const input=document.getElementById("closingDate");
+  const date=input?.value||new Date().toISOString().slice(0,10);
+  const sales=db.sales.filter(s=>s.date===date&&validSale(s));
+  const expenses=db.expenses.filter(x=>x.date===date);
+  const total=sales.reduce((a,s)=>a+Number(s.qty||0)*Number(s.price||0),0);
+  const cost=sales.reduce((a,s)=>a+Number(s.qty||0)*Number(s.cost||0),0);
+  const expenseTotal=expenses.reduce((a,x)=>a+Number(x.value||0),0);
+  const net=total-cost-expenseTotal;
+  const items=sales.reduce((a,s)=>a+Number(s.qty||0),0);
+  const payments={}; sales.forEach(s=>{const k=s.payment||"Nao informado";payments[k]=(payments[k]||0)+Number(s.qty||0)*Number(s.price||0);});
+  const groups=new Map(); sales.forEach(s=>{const k=saleGroupKey(s);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(s);});
+  const lines=["MINHA LOJA","FECHAMENTO DO DIA",dateBR(date),"","RESUMO","Faturamento: "+money(total),"Custo dos produtos: "+money(cost),"Gastos do dia: "+money(expenseTotal),"Lucro liquido: "+money(net),"Itens vendidos: "+items,"Numero de vendas: "+sales.length,"","FORMAS DE PAGAMENTO"];
+  Object.entries(payments).forEach(([k,v])=>lines.push(k+": "+money(v)));
+  lines.push("","VENDAS DO DIA");
+  [...groups.values()].forEach((rows,i)=>{const t=rows.reduce((a,s)=>a+Number(s.qty||0)*Number(s.price||0),0); lines.push("Venda "+(i+1)+" - "+(rows[0].payment||"Nao informado")+" - "+money(t)); rows.forEach(s=>lines.push("  "+(s.qty||0)+"x "+(s.productName||"Produto")+" - "+money(Number(s.qty||0)*Number(s.price||0))));});
+  lines.push("","Gerado em "+new Date().toLocaleString("pt-BR"));
+  downloadSimplePdf(lines,"fechamento-"+date+".pdf");
+}
+
 function printSaleReceipt(groupId){
   const rows=db.sales.filter(s=>saleGroupKey(s)===String(groupId)&&validSale(s));
   if(!rows.length){alert("Venda não encontrada ou cancelada.");return;}
@@ -231,6 +251,37 @@ function printSaleReceipt(groupId){
   const items=rows.map(s=>`<div class="receipt-item"><div><b>${esc(s.productName||"Produto")}</b><small>${s.qty} x ${money(s.price)}</small></div><strong>${money(Number(s.qty||0)*Number(s.price||0))}</strong></div>`).join("");
   const html=`<div class="print-doc receipt"><h1>Minha Loja</h1><h2>Comprovante do pedido</h2><p>${dateBR(rows[0].date)}</p>${customer?`<p><b>Cliente:</b> ${customer}</p>`:""}<div class="receipt-items">${items}</div><div class="receipt-total"><span>Total</span><b>${money(total)}</b></div><div class="print-line"><span>Pagamento</span><b>${esc(rows[0].payment||"Não informado")}</b></div><p class="print-muted">Obrigado pela preferência!</p><footer>Este documento é um comprovante do pedido e não substitui nota fiscal eletrônica.</footer></div>`;
   openPrintWindow(html,"Comprovante do pedido");
+}
+
+function downloadSalePdf(groupId){
+  const rows=db.sales.filter(s=>saleGroupKey(s)===String(groupId)&&validSale(s));
+  if(!rows.length){alert("Venda nao encontrada ou cancelada.");return;}
+  const total=rows.reduce((a,s)=>a+Number(s.qty||0)*Number(s.price||0),0);
+  const customer=rows[0].customerName||"";
+  const lines=["MINHA LOJA","COMPROVANTE DO PEDIDO",dateBR(rows[0].date),""];
+  if(customer) lines.push("Cliente: "+customer,"");
+  lines.push("ITENS");
+  rows.forEach(s=>lines.push((s.qty||0)+"x "+(s.productName||"Produto")+"  "+money(Number(s.qty||0)*Number(s.price||0))));
+  lines.push("","TOTAL: "+money(total),"Pagamento: "+(rows[0].payment||"Nao informado"),"","Obrigado pela preferencia!","","Este documento e um comprovante do pedido e nao substitui nota fiscal eletronica.");
+  downloadSimplePdf(lines,"pedido-"+String(groupId).slice(0,8)+".pdf");
+}
+
+function downloadSimplePdf(lines,filename){
+  const clean=v=>String(v??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[R$€£]/g,"R").replace(/[^\x20-\x7E]/g,"");
+  const escPdf=v=>clean(v).replace(/\\/g,"\\\\").replace(/\(/g,"\\(").replace(/\)/g,"\\)");
+  const wrapped=[];
+  lines.forEach(line=>{let t=clean(line); if(!t){wrapped.push("");return;} while(t.length>82){wrapped.push(t.slice(0,82));t=t.slice(82);} wrapped.push(t);});
+  const perPage=48, pages=[]; for(let i=0;i<wrapped.length;i+=perPage)pages.push(wrapped.slice(i,i+perPage));
+  const objs=[]; const add=x=>{objs.push(x);return objs.length;};
+  const font=add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+  const pageIds=[];
+  pages.forEach(pg=>{let stream="BT\n/F1 11 Tf\n48 800 Td\n"; pg.forEach((line,i)=>{if(i)stream+="0 -16 Td\n";stream+="("+escPdf(line)+") Tj\n";});stream+="ET"; const sid=add("<< /Length "+stream.length+" >>\nstream\n"+stream+"\nendstream"); const pid=add("<< /Type /Page /Parent PAGES /MediaBox [0 0 595 842] /Resources << /Font << /F1 "+font+" 0 R >> >> /Contents "+sid+" 0 R >>"); pageIds.push(pid);});
+  const pagesObj=add("<< /Type /Pages /Kids ["+pageIds.map(id=>id+" 0 R").join(" ")+"] /Count "+pageIds.length+" >>");
+  const catalog=add("<< /Type /Catalog /Pages "+pagesObj+" 0 R >>");
+  // Resolve placeholder Parent references.
+  pageIds.forEach(id=>{objs[id-1]=objs[id-1].replace("PAGES",pagesObj+" 0 R");});
+  let pdf="%PDF-1.4\n", offsets=[0]; objs.forEach((o,i)=>{offsets[i+1]=pdf.length;pdf+=(i+1)+" 0 obj\n"+o+"\nendobj\n";}); const xref=pdf.length; pdf+="xref\n0 "+(objs.length+1)+"\n0000000000 65535 f \n"; for(let i=1;i<=objs.length;i++)pdf+=String(offsets[i]).padStart(10,"0")+" 00000 n \n"; pdf+="trailer\n<< /Size "+(objs.length+1)+" /Root "+catalog+" 0 R >>\nstartxref\n"+xref+"\n%%EOF";
+  const blob=new Blob([pdf],{type:"application/pdf"}); const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
 
 function openPrintWindow(content,title){
