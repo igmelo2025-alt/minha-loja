@@ -116,6 +116,19 @@ body.login-locked{overflow:hidden}
 #syncStoreCode{letter-spacing:2px;font-weight:800;text-transform:uppercase}
 </style>
 
+
+<style id="v14-13-settings-style">
+.settings-overlay{position:fixed;inset:0;z-index:99990;background:rgba(20,12,8,.42);display:flex;align-items:flex-start;justify-content:center;padding:18px;overflow:auto}.settings-overlay.hidden{display:none}.settings-box{width:min(100%,620px);margin-top:max(12px,env(safe-area-inset-top));background:var(--surface,#fffdf9);color:var(--ink,#4a2418);border:1px solid var(--line,#e7d8ca);border-radius:22px;box-shadow:0 24px 70px rgba(0,0,0,.28);overflow:hidden}.settings-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;border-bottom:1px solid var(--line,#e7d8ca)}.settings-head h2{margin:0}.settings-close{width:40px;height:40px;border:0;border-radius:12px;background:var(--soft,#f0e3d7);color:var(--ink,#4a2418);font-size:25px;cursor:pointer}.settings-body{padding:18px}.settings-section{border:1px solid var(--line,#e7d8ca);border-radius:16px;padding:15px;margin-bottom:12px;background:var(--surface,#fffdf9)}.settings-section h3{margin:0 0 8px;font-size:15px}.settings-section p{margin:0 0 12px}.settings-field{display:grid;gap:7px}.settings-field label{font-size:12px;font-weight:800}.settings-field input,.settings-field select{width:100%;box-sizing:border-box;padding:12px;border:1px solid var(--line,#e7d8ca);border-radius:11px;background:var(--surface,#fff);color:var(--ink,#4a2418);font-size:14px}.settings-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.settings-link{width:100%;text-align:left;padding:12px;border:1px solid var(--line,#e7d8ca);border-radius:12px;background:var(--surface,#fffdf9);color:var(--ink,#4a2418);font-weight:750;cursor:pointer}.settings-link small{display:block;font-weight:500;opacity:.7;margin-top:3px}.settings-ok{font-size:12px;font-weight:700;min-height:18px;color:#356b4b;margin-top:8px}.settings-danger{color:#a33b2f!important}.settings-theme-row{display:flex;gap:8px;flex-wrap:wrap}.theme-choice{border:1px solid var(--line,#e7d8ca);border-radius:12px;padding:10px 12px;background:var(--surface,#fff);color:var(--ink,#4a2418);font-weight:800;cursor:pointer}.theme-choice.active{outline:3px solid rgba(200,164,93,.28);border-color:var(--gold,#c8a45d)}
+/* Temas selecionáveis — aplicados sobre o tema padrão sem alterar os dados. */
+html.theme-azul,body.theme-azul{--bg:#eef5ff;--surface:#ffffff;--ink:#16324f;--muted:#60758a;--line:#d6e3f0;--soft:#e6f0fa;--accent:#2563a6;--accent-dark:#173f68;--gold:#5b8fc9;background:#eef5ff!important;color:#16324f!important}
+body.theme-azul .topbar{background:linear-gradient(135deg,#173f68,#2563a6)!important}.theme-azul .primary{background:#2563a6!important}.theme-azul .secondary{color:#16324f!important;border-color:#d6e3f0!important}.theme-azul .bottom-nav,.theme-azul .quick,.theme-azul .card,.theme-azul .panel,.theme-azul .item{background:#fff!important;border-color:#d6e3f0!important}.theme-azul .quick b,.theme-azul .kpi-icon{background:#e6f0fa!important;color:#2563a6!important}.theme-azul .nav-item.active{color:#2563a6!important}.theme-azul .nav-item.active:before{background:#5b8fc9!important}.theme-azul .modal-box,.theme-azul .settings-box{background:#fff!important;border-color:#d6e3f0!important}
+html.theme-verde,body.theme-verde{--bg:#eff8f2;--surface:#ffffff;--ink:#173d2a;--muted:#668072;--line:#d5e7da;--soft:#e6f3e9;--accent:#2d7a4b;--accent-dark:#205c38;--gold:#6da983;background:#eff8f2!important;color:#173d2a!important}
+.theme-verde .topbar{background:linear-gradient(135deg,#205c38,#2d7a4b)!important}.theme-verde .primary{background:#2d7a4b!important}.theme-verde .secondary{color:#173d2a!important;border-color:#d5e7da!important}.theme-verde .bottom-nav,.theme-verde .quick,.theme-verde .card,.theme-verde .panel,.theme-verde .item{background:#fff!important;border-color:#d5e7da!important}.theme-verde .quick b,.theme-verde .kpi-icon{background:#e6f3e9!important;color:#2d7a4b!important}.theme-verde .nav-item.active{color:#2d7a4b!important}.theme-verde .nav-item.active:before{background:#6da983!important}.theme-verde .modal-box,.theme-verde .settings-box{background:#fff!important;border-color:#d5e7da!important}
+html.theme-roxo,body.theme-roxo{--bg:#f5f0fb;--surface:#ffffff;--ink:#34224f;--muted:#756987;--line:#e2d8ee;--soft:#eee7f7;--accent:#7650a8;--accent-dark:#53357d;--gold:#9b7ac6;background:#f5f0fb!important;color:#34224f!important}
+.theme-roxo .topbar{background:linear-gradient(135deg,#53357d,#7650a8)!important}.theme-roxo .primary{background:#7650a8!important}.theme-roxo .secondary{color:#34224f!important;border-color:#e2d8ee!important}.theme-roxo .bottom-nav,.theme-roxo .quick,.theme-roxo .card,.theme-roxo .panel,.theme-roxo .item{background:#fff!important;border-color:#e2d8ee!important}.theme-roxo .quick b,.theme-roxo .kpi-icon{background:#eee7f7!important;color:#7650a8!important}.theme-roxo .nav-item.active{color:#7650a8!important}.theme-roxo .nav-item.active:before{background:#9b7ac6!important}.theme-roxo .modal-box,.theme-roxo .settings-box{background:#fff!important;border-color:#e2d8ee!important}
+@media(max-width:560px){.settings-grid{grid-template-columns:1fr}.settings-overlay{padding:10px}.settings-box{border-radius:18px}}
+</style>
+
 </head>
 <body>
   <section id="loginScreen" class="login-screen">
@@ -139,10 +152,10 @@ body.login-locked{overflow:hidden}
 
   <header class="topbar">
     <div>
-      <div class="brand">Minha Loja <span class="brand-dot">●</span></div>
+      <div class="brand"><span id="brandStoreName">Minha Loja</span> <span class="brand-dot">●</span></div>
       <div class="subtitle">Visão geral do seu negócio</div>
     </div>
-    <div style="display:flex;gap:7px;align-items:center"><button id="logoutBtn" class="icon-btn" title="Sair">↪</button><button id="backupBtn" class="icon-btn" title="Backup">↥</button></div>
+    <div style="display:flex;gap:7px;align-items:center"><button id="settingsBtn" class="icon-btn" title="Configurações">⚙</button><button id="logoutBtn" class="icon-btn" title="Sair">↪</button><button id="backupBtn" class="icon-btn" title="Backup">↥</button></div>
   </header>
 
   <main class="app">
@@ -310,6 +323,48 @@ body.login-locked{overflow:hidden}
     <button class="nav-item" data-screen="more">•••<span>Mais</span></button>
   </nav>
 
+
+  <div id="settingsOverlay" class="settings-overlay hidden" aria-hidden="true">
+    <div class="settings-box" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="settings-head"><h2 id="settingsTitle">⚙️ Configurações</h2><button type="button" id="settingsClose" class="settings-close" aria-label="Fechar">×</button></div>
+      <div class="settings-body">
+        <div class="settings-section">
+          <h3>🏪 Identidade da loja</h3>
+          <p class="small-note">Altere o nome que aparece no aplicativo. A alteração fica salva neste aparelho.</p>
+          <div class="settings-field"><label for="storeNameInput">Nome da loja</label><input id="storeNameInput" type="text" maxlength="60" placeholder="Minha Loja"></div>
+          <div class="settings-actions"><button type="button" class="primary" id="saveStoreNameBtn">Salvar nome</button></div>
+          <div id="storeNameStatus" class="settings-ok"></div>
+        </div>
+        <div class="settings-section">
+          <h3>🎨 Tema</h3>
+          <p class="small-note">Escolha a aparência do aplicativo. O tema não altera seus dados.</p>
+          <div class="settings-theme-row">
+            <button type="button" class="theme-choice" data-theme="cacau">☕ Cacau</button>
+            <button type="button" class="theme-choice" data-theme="azul">🔵 Azul</button>
+            <button type="button" class="theme-choice" data-theme="verde">🟢 Verde</button>
+            <button type="button" class="theme-choice" data-theme="roxo">🟣 Roxo</button>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>🧰 Recursos da loja</h3>
+          <div class="settings-grid">
+            <button type="button" class="settings-link" data-settings-target="backup">💾 Backup e restauração<small>Exportar ou importar seus dados</small></button>
+            <button type="button" class="settings-link" data-settings-target="auto">🔄 Backup automático<small>Frequência e proteção local</small></button>
+            <button type="button" class="settings-link" data-settings-target="cloud">☁️ Backup na nuvem<small>Supabase e Google Drive</small></button>
+            <button type="button" class="settings-link" data-settings-target="sync">📱 Vincular aparelhos<small>Sincronização entre dispositivos</small></button>
+            <button type="button" class="settings-link" data-settings-target="users">👤 Usuários e acesso<small>Contas e permissões</small></button>
+            <button type="button" class="settings-link" data-settings-target="closing">📅 Fechamento do dia<small>Resumo e impressão</small></button>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>⚠️ Dados</h3>
+          <p class="small-note">Use somente se realmente quiser apagar produtos, vendas e gastos. Um backup de segurança é criado antes da ação.</p>
+          <button type="button" class="danger settings-link settings-danger" id="settingsClearBtn">Apagar todos os dados</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="modal" class="modal hidden">
     <div class="modal-box">
       <div class="modal-head"><h2 id="modalTitle"></h2><button id="closeModal" class="close">×</button></div>
@@ -318,6 +373,6 @@ body.login-locked{overflow:hidden}
   </div>
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app-v14-12.js?v=149"></script>
+  <script src="app-v14-13.js?v=149"></script>
 </body>
 </html>
