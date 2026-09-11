@@ -146,7 +146,7 @@ body{padding-bottom:0!important}
 
   <header class="topbar">
     <div class="topbar-left">
-      <button id="menuBtn" class="menu-btn" type="button" aria-label="Abrir menu" aria-expanded="false">☰</button>
+      <button id="menuBtn" class="menu-btn" type="button" aria-label="Abrir menu" aria-expanded="false" onclick="window.toggleSideMenu && window.toggleSideMenu()">☰</button>
       <div>
         <div class="brand" id="storeBrand">Minha Loja <span class="brand-dot">●</span></div>
         <div class="subtitle">Visão geral do seu negócio</div>
@@ -157,18 +157,38 @@ body{padding-bottom:0!important}
 
   <div id="sideMenuBackdrop" class="side-menu-backdrop hidden"></div>
   <aside id="sideMenu" class="side-menu" aria-hidden="true">
-    <div class="side-menu-head"><div><strong id="menuStoreName">Minha Loja</strong><small>Menu principal</small></div><button id="menuCloseBtn" class="close" type="button">×</button></div>
+    <div class="side-menu-head"><div><strong id="menuStoreName">Minha Loja</strong><small>Menu principal</small></div><button id="menuCloseBtn" class="close" type="button" onclick="window.closeSideMenu && window.closeSideMenu()">×</button></div>
     <nav class="side-menu-nav">
-      <button class="menu-item active" data-menu-screen="dashboard"><span>⌂</span>Início</button>
-      <button class="menu-item" data-menu-screen="stock"><span>▣</span>Estoque</button>
-      <button class="menu-item" data-menu-screen="sales"><span>＋</span>Vendas</button>
-      <button class="menu-item" data-menu-screen="expenses"><span>−</span>Gastos</button>
-      <button class="menu-item" data-menu-screen="more"><span>✓</span>Lucro</button>
-      <button class="menu-item" id="menuSettingsBtn"><span>⚙</span>Configurações</button>
-      <button class="menu-item" id="menuLogoutBtn"><span>↪</span>Sair</button>
+      <button class="menu-item active" data-menu-screen="dashboard" type="button" onclick="showScreen('dashboard'); closeSideMenu();"><span>⌂</span>Início</button>
+      <button class="menu-item" data-menu-screen="stock" type="button" onclick="showScreen('stock'); closeSideMenu();"><span>▣</span>Estoque</button>
+      <button class="menu-item" data-menu-screen="sales" type="button" onclick="showScreen('sales'); closeSideMenu();"><span>＋</span>Vendas</button>
+      <button class="menu-item" data-menu-screen="expenses" type="button" onclick="showScreen('expenses'); closeSideMenu();"><span>−</span>Gastos</button>
+      <button class="menu-item" data-menu-screen="more" type="button" onclick="showScreen('more'); closeSideMenu();"><span>✓</span>Lucro</button>
+      <button class="menu-item" id="menuSettingsBtn" type="button" onclick="closeSideMenu(); openSettings();"><span>⚙</span>Configurações</button>
+      <button class="menu-item" id="menuLogoutBtn" type="button" onclick="closeSideMenu(); logout();"><span>↪</span>Sair</button>
     </nav>
-    <div class="side-menu-footer"><small>Minha Loja</small><button id="menuBackupBtn" type="button">↥ Fazer backup</button></div>
+    <div class="side-menu-footer"><small>Minha Loja</small><button id="menuBackupBtn" type="button" onclick="closeSideMenu(); downloadBackup();">↥ Fazer backup</button></div>
   </aside>
+
+  <script>
+    // V14.15 — fallback de menu: funciona mesmo se o carregamento do app principal demorar.
+    window.toggleSideMenu=function(){
+      var m=document.getElementById("sideMenu"), b=document.getElementById("sideMenuBackdrop"), btn=document.getElementById("menuBtn");
+      if(!m)return;
+      var open=m.classList.toggle("open");
+      if(b)b.classList.toggle("hidden",!open);
+      if(btn){btn.setAttribute("aria-expanded",open?"true":"false");}
+      m.setAttribute("aria-hidden",open?"false":"true");
+    };
+    window.closeSideMenu=function(){
+      var m=document.getElementById("sideMenu"), b=document.getElementById("sideMenuBackdrop"), btn=document.getElementById("menuBtn");
+      if(m)m.classList.remove("open");
+      if(b)b.classList.add("hidden");
+      if(btn)btn.setAttribute("aria-expanded","false");
+      if(m)m.setAttribute("aria-hidden","true");
+    };
+    document.getElementById("sideMenuBackdrop")?.addEventListener("click",window.closeSideMenu);
+  </script>
 
   <main class="app">
     <section id="dashboard" class="screen active">
@@ -354,6 +374,6 @@ body{padding-bottom:0!important}
   </div>
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app-v14-13.js?v=150"></script>
+  <script src="app-v14-13.js?v=151"></script>
 </body>
 </html>
