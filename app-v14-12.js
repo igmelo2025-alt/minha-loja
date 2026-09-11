@@ -16,7 +16,7 @@ function save(){
   if(typeof scheduleV138CloudPush==="function") scheduleV138CloudPush();
   return true;
 }
-function money(v){return Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});}
+function money(v){return "R$ "+Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});}
 function validSale(s){return !(s?.status==="cancelled"||s?.cancelled===true);}
 function saleGroupKey(s){return String(s?.saleGroupId||s?.groupId||s?.id||"");}
 function dateBR(s){if(!s)return "";const [y,m,d]=s.split("-");return `${d}/${m}/${y}`;}
@@ -291,7 +291,7 @@ function downloadCompactSalePdf(groupId){
 }
 
 function downloadSimplePdf(lines,filename,opts={}){
-  const clean=v=>String(v??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[€£]/g,"R").replace(/[^\x20-\x7E]/g,"");
+  const clean=v=>String(v??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^\x20-\x7E$]/g,"");
   const escPdf=v=>clean(v).replace(/\\/g,"\\\\").replace(/\(/g,"\\(").replace(/\)/g,"\\)");
   const maxChars=opts.maxChars||82;
   const wrapped=[]; lines.forEach(line=>{let t=clean(line); if(!t){wrapped.push("");return;} while(t.length>maxChars){wrapped.push(t.slice(0,maxChars));t=t.slice(maxChars);} wrapped.push(t);});
