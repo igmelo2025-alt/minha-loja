@@ -7,7 +7,12 @@ if(!Array.isArray(db.sales)) db.sales=[];
 if(!Array.isArray(db.expenses)) db.expenses=[];
 if(!Array.isArray(db.users) || !db.users.length) db.users=[{id:"admin",username:"admin",name:"Administrador",role:"admin",passwordHash:"03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4"}]; else { let __admins=db.users.filter(x=>x&&x.role==="admin"); let __keeper=db.users.find(x=>x&&x.username==="admin")||__admins[0]; if(!__keeper){__keeper={id:"admin",username:"admin",name:"Administrador",role:"admin",passwordHash:"03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4"};db.users.unshift(__keeper);} db.users=db.users.map(x=>x===__keeper?{...x,id:"admin",username:"admin",role:"admin",name:x.name||"Administrador"}:{...x,role:"user"}); try{localStorage.setItem(KEY,JSON.stringify(db));}catch(e){} }
 let currentUser=null;
-try{currentUser=JSON.parse(sessionStorage.getItem("minha_loja_login_session")||"null");}catch(e){}
+try{
+  currentUser=JSON.parse(sessionStorage.getItem("minha_loja_login_session")||"null");
+  if(!currentUser && localStorage.getItem("minha_loja_login_remember")==="1"){
+    currentUser=JSON.parse(localStorage.getItem("minha_loja_login_session")||"null");
+  }
+}catch(e){}
 
 // V14.13 — menu superior, nome da loja e temas
 const STORE_SETTINGS_KEY="minha_loja_settings_v1";
@@ -33,21 +38,100 @@ function applyStoreTheme(){
   if(preview)preview.textContent=s.name||"Minha Loja";
   document.title=s.name||"Minha Loja";
 }
+function ensureSettingsAdvancedPanels(){
+  const map={
+    closingPanel:".closing-panel",
+    backupPanel:"#exportBtn",
+    autoBackupPanel:"#autoBackupEnabled",
+    cloudPanel:"#cloudProvider",
+    syncPanel:"#syncStoreCode",
+    usersPanel:"#usersPanel",
+    clearPanel:"#clearBtn"
+  };
+  Object.entries(map).forEach(([id,selector])=>{
+    const existing=document.getElementById(id);
+    if(existing && existing.classList.contains("panel")) return;
+    const marker=document.querySelector(selector);
+    const panel=marker?.closest(".panel");
+    if(panel) panel.id=id;
+  });
+}
 function openSettings(){
-  const modal=document.getElementById("settingsModal"),input=document.getElementById("storeNameInput"),grid=document.getElementById("themeChoices");if(!modal||!input||!grid)return;
-  const s=getStoreSettings();input.value=s.name||"Minha Loja";
+  const modal=document.getElementById("settingsModal"),input=document.getElementById("storeNameInput"),grid=document.getElementById("themeChoices");
+  if(!modal||!input||!grid)return;
+  ensureSettingsAdvancedPanels();
+  const s=getStoreSettings();
+  input.value=s.name||"Minha Loja";
   grid.innerHTML=Object.entries(STORE_THEMES).map(([id,t])=>`<button type="button" class="theme-choice ${id===s.theme?'selected':''}" data-theme="${id}"><span class="theme-swatches"><i style="background:${t.accent}"></i><i style="background:${t.gold}"></i><i style="background:${t.bg};border:1px solid ${t.line}"></i></span><b>${t.name}</b><small>${t.desc}</small></button>`).join("");
   grid.querySelectorAll(".theme-choice").forEach(b=>b.onclick=()=>{grid.querySelectorAll(".theme-choice").forEach(x=>x.classList.remove("selected"));b.classList.add("selected");document.getElementById("previewStoreName").textContent=input.value.trim()||"Minha Loja";});
   input.oninput=()=>document.getElementById("previewStoreName").textContent=input.value.trim()||"Minha Loja";
+  const area=document.getElementById("settingsAdvancedArea");
+  if(area){
+    area.innerHTML="";
+    document.querySelectorAll(".settings-tool[data-settings-target]").forEach(btn=>{
+      btn.onclick=()=>{
+        const target=document.getElementById(btn.dataset.settingsTarget);
+        if(!target)return;
+        area.innerHTML="";
+        const ph=document.createElement("span");
+        ph.id="settings-placeholder-"+target.id;
+        ph.style.display="none";
+        target.parentNode.insertBefore(ph,target);
+        target.dataset.originalPlaceholder=ph.id;
+        target.style.display="block";
+        const title=document.createElement("div");
+        title.className="settings-advanced-title";
+        title.textContent=btn.querySelector("b")?.textContent||"Configuração";
+        const back=document.createElement("button");
+        back.type="button";
+        back.className="secondary settings-back-btn";
+        back.textContent="← Voltar para configurações";
+        back.onclick=()=>{
+          if(target.dataset.originalPlaceholder){
+            const p=document.getElementById(target.dataset.originalPlaceholder);
+            if(p)p.replaceWith(target);
+          }
+          delete target.dataset.originalPlaceholder;
+          target.style.display="";
+          area.innerHTML="";
+          openSettings();
+        };
+        area.append(title,back,target);
+        setTimeout(()=>area.scrollIntoView({behavior:"smooth",block:"start"}),30);
+      };
+    });
+  }
   modal.classList.remove("hidden");
 }
-function closeSettings(){document.getElementById("settingsModal")?.classList.add("hidden");}
+function closeSettings(){
+  const modal=document.getElementById("settingsModal");
+  if(!modal)return;
+  const area=document.getElementById("settingsAdvancedArea");
+  if(area){
+    Array.from(area.querySelectorAll(":scope > .panel")).forEach(panel=>{
+      const placeholderId=panel.dataset.originalPlaceholder;
+      const ph=placeholderId&&document.getElementById(placeholderId);
+      if(ph)ph.replaceWith(panel);
+      else document.getElementById("more")?.appendChild(panel);
+      panel.removeAttribute("data-original-placeholder");
+    });
+    area.innerHTML="";
+  }
+  modal.classList.add("hidden");
+}
+window.openSettings=openSettings;
+window.saveSettings=saveSettings;
 function saveSettings(){
   if(!isAdmin()){alert("Somente o administrador pode alterar as configurações da loja.");return;}
   const input=document.getElementById("storeNameInput"),grid=document.getElementById("themeChoices");
-  let name=(input?.value||"").trim().replace(/\s+/g," ");if(!name)name="Minha Loja";if(name.length>40)name=name.slice(0,40);
+  let name=(input?.value||"").trim().replace(/\s+/g," ");
+  if(!name)name="Minha Loja";
+  if(name.length>40)name=name.slice(0,40);
   const selected=grid?.querySelector(".theme-choice.selected")?.dataset.theme||"cacau";
-  setStoreSettings({name,theme:selected});applyStoreTheme();closeSettings();alert("Configurações da loja salvas com sucesso!");
+  setStoreSettings({name,theme:selected});
+  applyStoreTheme();
+  closeSettings();
+  alert("Configurações da loja salvas com sucesso!");
 }
 function openSideMenu(){document.getElementById("sideMenu")?.classList.add("open");document.getElementById("sideMenuBackdrop")?.classList.remove("hidden");document.getElementById("menuBtn")?.setAttribute("aria-expanded","true");document.getElementById("sideMenu")?.setAttribute("aria-hidden","false");}
 function closeSideMenu(){document.getElementById("sideMenu")?.classList.remove("open");document.getElementById("sideMenuBackdrop")?.classList.add("hidden");document.getElementById("menuBtn")?.setAttribute("aria-expanded","false");document.getElementById("sideMenu")?.setAttribute("aria-hidden","true");}
@@ -809,7 +893,16 @@ document.getElementById("closingDate")?.addEventListener("change",renderClosing)
 document.getElementById("addUserBtn")?.addEventListener("click",()=>openUserForm());
 
 window.onMinhaLojaLogin=function(user){currentUser=user;renderUsers();setTimeout(()=>{const c=getAutoCfg();if(c.syncEnabled&&c.syncCode&&c.supabaseUrl&&c.supabaseAnonKey)pullCloudV138(false,true);},700);};
-try{if(!currentUser){const x=sessionStorage.getItem("minha_loja_login_session");if(x)currentUser=JSON.parse(x);}}catch(e){}
+try{
+  if(!currentUser){
+    const x=sessionStorage.getItem("minha_loja_login_session");
+    if(x)currentUser=JSON.parse(x);
+    else if(localStorage.getItem("minha_loja_login_remember")==="1"){
+      const y=localStorage.getItem("minha_loja_login_session");
+      if(y)currentUser=JSON.parse(y);
+    }
+  }
+}catch(e){}
 
 
 /* V13.6 — Cancelamento de venda / devolução automática de estoque */

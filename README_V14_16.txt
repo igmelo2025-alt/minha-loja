@@ -1,0 +1,1 @@
+V14.16 — Configurações completas: restaura as funções anteriores (fechamento, backup/restauração, backup automático, backup na nuvem, sincronização entre aparelhos, usuários e apagar dados) dentro de Configurações, além de nome da loja e temas.
