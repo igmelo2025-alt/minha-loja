@@ -1,4 +1,4 @@
-MINHA LOJA — V14.13
+MINHA LOJA — V14.14
 
 Novidades:
 - Menu principal no topo esquerdo ao lado da logo.

@@ -54,7 +54,7 @@ function closeSideMenu(){document.getElementById("sideMenu")?.classList.remove("
 function wireV1413Menu(){
   document.getElementById("menuBtn")?.addEventListener("click",openSideMenu);document.getElementById("menuCloseBtn")?.addEventListener("click",closeSideMenu);document.getElementById("sideMenuBackdrop")?.addEventListener("click",closeSideMenu);
   document.querySelectorAll(".menu-item[data-menu-screen]").forEach(b=>b.addEventListener("click",()=>{showScreen(b.dataset.menuScreen);document.querySelectorAll(".menu-item").forEach(x=>x.classList.remove("active"));b.classList.add("active");closeSideMenu();}));
-  document.getElementById("menuSettingsBtn")?.addEventListener("click",()=>{closeSideMenu();openSettings();});document.getElementById("settingsClose")?.addEventListener("click",closeSettings);document.getElementById("settingsCancel")?.addEventListener("click",closeSettings);document.getElementById("settingsSave")?.addEventListener("click",saveSettings);document.getElementById("settingsModal")?.addEventListener("click",e=>{if(e.target.id==="settingsModal")closeSettings();});document.getElementById("menuBackupBtn")?.addEventListener("click",()=>{closeSideMenu();downloadBackup();});
+  document.getElementById("menuSettingsBtn")?.addEventListener("click",()=>{closeSideMenu();openSettings();});document.getElementById("menuLogoutBtn")?.addEventListener("click",()=>{closeSideMenu();logout();});document.getElementById("settingsClose")?.addEventListener("click",closeSettings);document.getElementById("settingsCancel")?.addEventListener("click",closeSettings);document.getElementById("settingsSave")?.addEventListener("click",saveSettings);document.getElementById("settingsModal")?.addEventListener("click",e=>{if(e.target.id==="settingsModal")closeSettings();});document.getElementById("menuBackupBtn")?.addEventListener("click",()=>{closeSideMenu();downloadBackup();});
   applyStoreTheme();
 }
 
@@ -807,7 +807,7 @@ document.getElementById("closingDate")?.addEventListener("change",renderClosing)
 
 // V13.2 — acesso e usuários
 document.getElementById("addUserBtn")?.addEventListener("click",()=>openUserForm());
-document.getElementById("logoutBtn")?.addEventListener("click",logout);
+
 window.onMinhaLojaLogin=function(user){currentUser=user;renderUsers();setTimeout(()=>{const c=getAutoCfg();if(c.syncEnabled&&c.syncCode&&c.supabaseUrl&&c.supabaseAnonKey)pullCloudV138(false,true);},700);};
 try{if(!currentUser){const x=sessionStorage.getItem("minha_loja_login_session");if(x)currentUser=JSON.parse(x);}}catch(e){}
 
